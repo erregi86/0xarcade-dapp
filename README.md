@@ -1,36 +1,54 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 0xArcade Protocol 🕹️
 
-## Getting Started
+![Status](https://img.shields.io/badge/SYSTEM-ONLINE-00ff41?style=for-the-badge&labelColor=050505)
+![Stack](https://img.shields.io/badge/NEXT.JS-16-00ff41?style=for-the-badge&labelColor=050505)
+![License](https://img.shields.io/badge/LICENSE-MIT-00ff41?style=for-the-badge&labelColor=050505)
 
-First, run the development server:
+**0xArcade** is a decentralized application (dApp) combining high-performance DeFi utility with a retro-futuristic "Arcade" aesthetic. Built for speed, responsiveness, and immersion.
+
+> **// SYSTEM MESSAGE:** > Welcome to the grid. The protocol connects nostalgic arcade visuals with modern on-chain liquidity.
+
+## ⚡ Key Features
+
+### 🖥️ Cyberpunk Terminal UI
+A custom design system built on **Tailwind CSS**, strictly adhering to the `#00ff41` (Neon Green) and `#050505` (Void Black) palette. Features include CRT flicker effects, monospace typography, and high-contrast accessibility.
+
+### 📊 Tactical Dashboard (Clearance Lvl 1)
+Military-grade analytics interface for tracking protocol metrics:
+* **Tactical Grid Layout:** HUD-style borders and decorative elements.
+* **Live System Logs:** Simulated terminal feeds providing immersive feedback.
+* **Real-time Stats:** Active operatives, block height, and network volume.
+
+### 🧭 Advanced Navigation
+* **Responsive Sidebar:** Collapsible mobile menu with backdrop blur.
+* **Live Alerts:** Dynamic **[NEW]** pulsing tags to highlight recent feature drops (e.g., Leaderboard).
+* **Smooth Routing:** Powered by Next.js App Router.
+
+### 🔗 Web3 Native
+* **Wagmi Integration:** Full hook support for wallet connection and state management.
+* **Smart Contract Interaction:** (Coming Soon) Direct interaction with Arcade Protocol contracts.
+
+## 🛠️ Tech Stack
+
+* **Framework:** Next.js 16 (App Router)
+* **Language:** TypeScript (`.tsx`)
+* **Styling:** Tailwind CSS + Lucide React Icons
+* **Blockchain:** Wagmi / Viem
+* **Fonts:** 'Press Start 2P' (Headers) & Monospace (Body)
+
+## 🚀 Getting Started
+
+Initialize the protocol locally:
 
 ```bash
+# 1. Clone the repository
+git clone [https://github.com/erregi86/0xarcade-dapp.git](https://github.com/erregi86/0xarcade-dapp.git)
+
+# 2. Enter the directory
+cd 0xarcade-dapp
+
+# 3. Install dependencies
+npm install
+
+# 4. Run development server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
