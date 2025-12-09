@@ -1,171 +1,211 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { Zap } from 'lucide-react';
 
-interface Props {
+interface CyberFlapProps {
   onGameOver: (score: number) => void;
 }
 
-export default function CyberFlap({ onGameOver }: Props) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+export default function CyberFlap({ onGameOver }: CyberFlapProps) {
+  // --- CONFIGURAZIONE ---
+  const GRAVITY = 0.6;        // Gravità solida
+  const JUMP = -8.5;          // Salto scattante
+  const PIPE_WIDTH = 60;
+  const PIPE_SPACING = 320;   // Distanza orizzontale
+  const INITIAL_GAP = 210;    // Gap iniziale (facile)
+  const MIN_GAP = 125;        // Gap minimo (difficile)
+  const INITIAL_SPEED = 3.5;  // Velocità partenza
+  const MAX_SPEED = 8.0;      // Velocità massima
+
+  // COLOR THEME: CYAN
+  const PRIMARY_COLOR = '#00f3ff'; 
+
+  // Refs
+  const birdRef = useRef({ y: 250, velocity: 0 });
+  const pipesRef = useRef<{ x: number; topHeight: number; passed: boolean }[]>([]);
+  const reqRef = useRef<number>();
+  const scoreRef = useRef(0);
+  const speedRef = useRef(INITIAL_SPEED);
+  const gapRef = useRef(INITIAL_GAP);
+
+  const [gameState, setGameState] = useState<'start' | 'playing' | 'gameover'>('start');
+  const [birdY, setBirdY] = useState(250);
+  const [pipes, setPipes] = useState<{ x: number; topHeight: number }[]>([]);
   const [score, setScore] = useState(0);
-  const [gameStarted, setGameStarted] = useState(false);
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    let animationFrameId: number;
+  const initGame = () => {
+    birdRef.current = { y: 250, velocity: 0 };
+    pipesRef.current = [];
+    scoreRef.current = 0;
+    speedRef.current = INITIAL_SPEED;
+    gapRef.current = INITIAL_GAP;
     
-    // Configurazione Fisica
-    const GRAVITY = 0.5;
-    const JUMP = -8;
-    const SPEED = 3;
-    const PIPE_WIDTH = 50;
-    const PIPE_GAP = 120; // Spazio tra i tubi
-    const SPAWN_RATE = 100; // Ogni quanti frame appare un tubo
+    // Genera primi tubi
+    for (let i = 0; i < 3; i++) {
+      addPipe(500 + i * PIPE_SPACING);
+    }
+    
+    setScore(0);
+    setGameState('playing');
+  };
 
-    // Stato Iniziale
-    let bird = { x: 50, y: 150, width: 30, height: 30, velocity: 0 };
-    let pipes: { x: number; topHeight: number }[] = [];
-    let frameCount = 0;
-    let currentScore = 0;
-    let isRunning = true;
+  const addPipe = (xOffset: number) => {
+    const minPipe = 60;
+    // Calcola altezza massima possibile per il tubo alto basandosi sul gap attuale
+    const maxPipe = 500 - gapRef.current - minPipe; 
+    const topHeight = Math.floor(Math.random() * (maxPipe - minPipe + 1)) + minPipe;
+    pipesRef.current.push({ x: xOffset, topHeight, passed: false });
+  };
 
-    const handleInput = () => {
-      if (!isRunning) return;
-      bird.velocity = JUMP;
-    };
+  const loop = useCallback(() => {
+    if (gameState !== 'playing') return;
 
-    const resetGame = () => {
-      bird = { x: 50, y: 150, width: 30, height: 30, velocity: 0 };
-      pipes = [];
-      frameCount = 0;
-      currentScore = 0;
-      setScore(0);
-      isRunning = true;
-    };
+    // 1. FISICA BIRD
+    birdRef.current.velocity += GRAVITY;
+    birdRef.current.y += birdRef.current.velocity;
 
-    const loop = () => {
-      if (!isRunning) return;
-
-      // 1. Pulisci Canvas
-      ctx.fillStyle = '#0a0a0a';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      // 2. Fisica Bird
-      bird.velocity += GRAVITY;
-      bird.y += bird.velocity;
-
-      // 3. Generazione Tubi (Cavi)
-      if (frameCount % SPAWN_RATE === 0) {
-        const minHeight = 50;
-        const maxHeight = canvas.height - minHeight - PIPE_GAP;
-        const randomHeight = Math.floor(Math.random() * (maxHeight - minHeight + 1) + minHeight);
-        pipes.push({ x: canvas.width, topHeight: randomHeight });
-      }
-
-      // 4. Gestione Tubi e Collisioni
-      for (let i = 0; i < pipes.length; i++) {
-        let p = pipes[i];
-        p.x -= SPEED;
-
-        // Disegna Tubo Superiore (Ciano)
-        ctx.fillStyle = '#00f0ff'; // Cyber Blue
-        ctx.fillRect(p.x, 0, PIPE_WIDTH, p.topHeight);
-        
-        // Disegna Tubo Inferiore
-        ctx.fillRect(p.x, p.topHeight + PIPE_GAP, PIPE_WIDTH, canvas.height - (p.topHeight + PIPE_GAP));
-
-        // Collision Logic
-        if (
-          bird.x < p.x + PIPE_WIDTH &&
-          bird.x + bird.width > p.x &&
-          (bird.y < p.topHeight || bird.y + bird.height > p.topHeight + PIPE_GAP)
-        ) {
-          isRunning = false;
-          onGameOver(currentScore);
-        }
-
-        // Rimuovi tubi passati e aumenta punteggio
-        if (p.x + PIPE_WIDTH < 0) {
-          pipes.shift();
-          i--;
-        }
-        
-        // Punteggio: se il tubo passa il bird
-        if (p.x + PIPE_WIDTH === bird.x) {
-            currentScore++;
-            setScore(currentScore);
-        }
-      }
-
-      // 5. Collisioni Limiti (Soffitto/Pavimento)
-      if (bird.y + bird.height > canvas.height || bird.y < 0) {
-        isRunning = false;
-        onGameOver(currentScore);
-      }
-
-      // 6. Disegna Bird (Giallo)
-      ctx.fillStyle = '#ffee00';
-      ctx.shadowBlur = 10;
-      ctx.shadowColor = '#ffee00';
-      ctx.fillRect(bird.x, bird.y, bird.width, bird.height);
-      ctx.shadowBlur = 0;
-
-      frameCount++;
-      animationFrameId = requestAnimationFrame(loop);
-    };
-
-    if (gameStarted) {
-      resetGame();
-      loop();
-    } else {
-        // Schermata Home del gioco
-        ctx.fillStyle = '#0a0a0a';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = '#00f0ff';
-        ctx.font = '20px monospace';
-        ctx.fillText("TAP TO FLY", 350, 180);
+    // Soffitto/Pavimento
+    if (birdRef.current.y > 490 || birdRef.current.y < 0) {
+      handleGameOver();
+      return;
     }
 
-    window.addEventListener('mousedown', handleInput);
-    window.addEventListener('touchstart', handleInput);
-    window.addEventListener('keydown', (e) => { if(e.code === 'Space') handleInput() });
+    // 2. FISICA TUBI
+    pipesRef.current.forEach(pipe => {
+      pipe.x -= speedRef.current;
 
-    return () => {
-      window.removeEventListener('mousedown', handleInput);
-      window.removeEventListener('touchstart', handleInput);
-      cancelAnimationFrame(animationFrameId);
+      // Hitbox Bird (Leggermente ridotta per essere "buoni")
+      const birdLeft = 50 + 5; 
+      const birdRight = 50 + 30 - 5;
+      const birdTop = birdRef.current.y + 5;
+      const birdBottom = birdRef.current.y + 30 - 5;
+
+      // Hitbox Pipe
+      const pipeLeft = pipe.x;
+      const pipeRight = pipe.x + PIPE_WIDTH;
+      
+      // Controllo Collisione Orizzontale
+      if (birdRight > pipeLeft && birdLeft < pipeRight) {
+        // Controllo Collisione Verticale (Tocca sopra O tocca sotto)
+        if (birdTop < pipe.topHeight || birdBottom > pipe.topHeight + gapRef.current) {
+          handleGameOver();
+          return;
+        }
+      }
+
+      // Check Punteggio
+      if (!pipe.passed && birdLeft > pipeRight) {
+        pipe.passed = true;
+        scoreRef.current += 1;
+        setScore(scoreRef.current);
+
+        // 🟢 PROGRESSIONE DIFFICOLTÀ (Ogni tubo conta!)
+        // 1. Aumenta velocità leggermente
+        if (speedRef.current < MAX_SPEED) speedRef.current += 0.05;
+        
+        // 2. Riduci il gap (più stretto)
+        if (gapRef.current > MIN_GAP) gapRef.current -= 2;
+      }
+    });
+
+    // Rimuovi tubi usciti e aggiungi nuovi
+    if (pipesRef.current.length > 0 && pipesRef.current[0].x < -PIPE_WIDTH) {
+      pipesRef.current.shift();
+      const lastPipeX = pipesRef.current[pipesRef.current.length - 1].x;
+      addPipe(lastPipeX + PIPE_SPACING);
+    }
+
+    // Render
+    setBirdY(birdRef.current.y);
+    setPipes([...pipesRef.current]);
+    reqRef.current = requestAnimationFrame(loop);
+  }, [gameState]);
+
+  useEffect(() => {
+    if (gameState === 'playing') reqRef.current = requestAnimationFrame(loop);
+    return () => { if (reqRef.current) cancelAnimationFrame(reqRef.current); };
+  }, [gameState, loop]);
+
+  const handleInput = () => {
+    if (gameState === 'start') initGame();
+    else if (gameState === 'playing') {
+      birdRef.current.velocity = JUMP;
+    }
+  };
+
+  // Keyboard Support (Spacebar)
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.code === 'Space' || e.code === 'ArrowUp') {
+        e.preventDefault();
+        handleInput();
+      }
     };
-  }, [gameStarted, onGameOver]);
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [gameState]);
+
+  const handleGameOver = () => {
+    setGameState('gameover');
+    if (reqRef.current) cancelAnimationFrame(reqRef.current);
+    onGameOver(scoreRef.current);
+  };
 
   return (
-    <div className="relative border-4 border-cyan-500 rounded p-1 bg-black">
-      <div className="absolute top-4 right-4 text-cyan-500 font-pixel text-2xl z-10">
-        SCORE: {score}
+    <div 
+      className="relative w-full h-[500px] bg-[#050505] overflow-hidden border cursor-pointer select-none shadow-[0_0_20px_rgba(0,243,255,0.1)]"
+      style={{ borderColor: PRIMARY_COLOR }}
+      onMouseDown={handleInput}
+      onTouchStart={handleInput}
+    >
+      <div className="absolute top-4 right-4 z-10 text-right pointer-events-none">
+        <div className="text-2xl font-[Press Start 2P]" style={{ color: PRIMARY_COLOR }}>{score}</div>
+        <div className="text-[10px] font-mono opacity-50" style={{ color: PRIMARY_COLOR }}>SPEED: {speedRef.current.toFixed(1)} | GAP: {gapRef.current}</div>
       </div>
 
-      {!gameStarted && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-20">
-            <button 
-                onClick={() => setGameStarted(true)} 
-                className="bg-cyan-600 text-black px-6 py-3 font-pixel text-xl hover:scale-105 transition-transform"
-            >
-                INITIATE FLIGHT
-            </button>
+      {gameState === 'start' && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/60 z-20 pointer-events-none">
+          <p className="font-[Press Start 2P] animate-pulse" style={{ color: PRIMARY_COLOR }}>TAP / SPACE TO FLY</p>
         </div>
       )}
 
-      <canvas 
-        ref={canvasRef} 
-        width={800} 
-        height={400} 
-        className="block bg-black w-full max-w-full"
-      />
-      <p className="text-center text-zinc-500 text-xs mt-2 font-mono">CONTROLS: [SPACE] or [TAP] TO FLY UP</p>
+      {/* Bird */}
+      <div 
+        className="absolute left-[50px] w-[30px] h-[30px] flex items-center justify-center rounded-sm shadow-[0_0_15px_#00f3ff]"
+        style={{ 
+          top: birdY, 
+          backgroundColor: PRIMARY_COLOR,
+          transform: `rotate(${Math.min(Math.max(birdRef.current.velocity * 5, -30), 90)}deg)` 
+        }}
+      >
+        <Zap size={20} className="text-black fill-current" />
+      </div>
+
+      {/* Pipes */}
+      {pipes.map((pipe, i) => (
+        <div key={i}>
+          <div 
+            className="absolute border-b-2 border-r-2 border-l-2 bg-opacity-20"
+            style={{ 
+              left: pipe.x, top: 0, width: PIPE_WIDTH, height: pipe.topHeight,
+              borderColor: PRIMARY_COLOR, backgroundColor: `${PRIMARY_COLOR}33`
+            }}
+          />
+          <div 
+            className="absolute border-t-2 border-r-2 border-l-2 bg-opacity-20"
+            style={{ 
+              left: pipe.x, 
+              top: pipe.topHeight + gapRef.current, 
+              width: PIPE_WIDTH, 
+              height: 500 - (pipe.topHeight + gapRef.current),
+              borderColor: PRIMARY_COLOR, backgroundColor: `${PRIMARY_COLOR}33`
+            }}
+          />
+        </div>
+      ))}
+
+      <div className="absolute bottom-0 w-full h-2" style={{ backgroundColor: PRIMARY_COLOR }}></div>
     </div>
   );
 }
