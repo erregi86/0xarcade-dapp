@@ -1,130 +1,135 @@
 'use client';
 
-import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Hexagon, Lock, CheckCircle, Box } from 'lucide-react';
-import TacticalAlert from '../TacticalAlert';
+import { useState, useEffect } from 'react';
+import { useAccount } from 'wagmi';
+import { getUserProfile } from '../../lib/db';
+import TacticalNftCard from '../nft/TacticalNftCard';
+import { RunnerIcon, UFOIcon, BrickIcon } from '../PixelIcons';
+import { Box } from 'lucide-react';
 
 export function InventoryPage() {
-  // Stato simulato per vedere l'effetto "Minted"
-  const [mintedItems, setMintedItems] = useState<number[]>([]);
-  const [loadingId, setLoadingId] = useState<number | null>(null);
-  const [alert, setAlert] = useState(false);
+  const { address, isConnected } = useAccount();
+  
+  // Stato Utente
+  const [userLevel, setUserLevel] = useState<number>(0);
+  const [loadingProfile, setLoadingProfile] = useState(true);
+  
+  // Per ora simuliamo gli oggetti posseduti in locale
+  const [ownedIds, setOwnedIds] = useState<number[]>([]);
 
-  const nftCollection = [
+  // Carica Livello Utente
+  useEffect(() => {
+    if (address) {
+      getUserProfile(address).then(({ data }) => {
+        if (data) setUserLevel(data.level || 1);
+        setLoadingProfile(false);
+      });
+    }
+  }, [address]);
+
+  // Lista NFT e Requisiti
+  const nfts = [
     {
-      id: 1,
-      name: "AGENT CARD LVL.1",
-      type: "SOULBOUND BADGE",
-      desc: "Proof of participation in 0xArcade Alpha.",
-      price: "FREE MINT",
-      image: "🆔",
-      req: "Level 1 Reached",
-      isLocked: false // Questo è sbloccabile
+      id: 101,
+      name: "ROOKIE ID",
+      type: "BADGE",
+      rarity: "COMMON" as const,
+      price: "FREE",
+      requiredLevel: 1, // Sbloccato subito
+      icon: (
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-[#00ff41]">
+           <rect x="3" y="4" width="18" height="16" rx="2" />
+           <circle cx="12" cy="10" r="3" />
+           <path d="M7 20v-2a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2" />
+        </svg>
+      )
     },
     {
-      id: 2,
-      name: "GOLDEN RUNNER",
-      type: "GAME SKIN",
-      desc: "Legendary skin for Net Runner module. +10% XP Boost.",
-      price: "500 CHZ",
-      image: "🏃",
-      req: "Win 10 Wager Matches",
-      isLocked: true // Questo è bloccato (esempio)
-    }
+      id: 201,
+      name: "GHOST RUNNER",
+      type: "SKIN",
+      rarity: "RARE" as const,
+      price: "250 CHZ",
+      requiredLevel: 5, // Richiede Lv 5
+      icon: <RunnerIcon />
+    },
+    {
+      id: 301,
+      name: "THE CUBE",
+      type: "ITEM",
+      rarity: "LEGENDARY" as const,
+      price: "1000 CHZ",
+      requiredLevel: 10, // Richiede Lv 10
+      icon: <BrickIcon />
+    },
+    {
+      id: 999,
+      name: "MASTER KEY",
+      type: "ACCESS",
+      rarity: "LEGENDARY" as const,
+      price: "SOULBOUND",
+      requiredLevel: 50,
+      icon: <UFOIcon />
+    },
   ];
 
-  const handleMint = (id: number) => {
-    setLoadingId(id);
-    // Simuliamo la transazione blockchain (2 secondi)
-    setTimeout(() => {
-      setLoadingId(null);
-      setMintedItems([...mintedItems, id]);
-      setAlert(true); // Mostra popup successo
-    }, 2000);
+  const handleSimulatedMint = (id: number, name: string) => {
+    if (!confirm(`Simulazione: Vuoi mintare "${name}"?`)) return;
+    
+    // Aggiungi ai posseduti (Simulazione)
+    setOwnedIds([...ownedIds, id]);
+    alert("Asset aggiunto all'inventario (Locale)");
   };
 
+  if (!isConnected) return null;
+
   return (
-    <motion.div 
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      className="p-4 md:p-8 text-[#00ff41] font-mono max-w-6xl mx-auto relative"
-    >
-      <TacticalAlert 
-        isOpen={alert}
-        title="ASSET ACQUIRED"
-        message="NFT SUCCESSFULLY MINTED TO WALLET ADDRESS. INVENTORY UPDATED."
-        type="success"
-        onClose={() => setAlert(false)}
-        actionLabel="VIEW ON CHILISCAN"
-        onAction={() => window.open('https://testnet.chiliscan.com', '_blank')}
-      />
-
-      <div className="mb-8 border-l-4 border-[#00ff41] pl-6 py-2">
-        <h2 className="mb-2 tracking-wider font-bold text-2xl">DIGITAL ASSETS</h2>
-        <p className="text-xs opacity-70">BADGES // SKINS // COLLECTIBLES</p>
+    <div className="p-6 md:p-10 animate-[fadeIn_0.5s_ease-out]">
+      
+      {/* HEADER PAGINA */}
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-10 border-b-2 border-[#00ff41]/30 pb-6 gap-4">
+         <div>
+            <h2 className="text-2xl md:text-3xl text-white font-[Press Start 2P] mb-3 flex items-center gap-3">
+                <Box size={32} className="text-[#00ff41]" /> ARMORY
+            </h2>
+            <p className="text-xs text-[#00ff41] font-mono opacity-70 tracking-widest">
+               {loadingProfile ? 'SYNCING...' : `OPERATIVE LEVEL: ${userLevel} // REWARDS AVAILABLE`}
+            </p>
+         </div>
+         
+         <div className="flex flex-col items-end gap-1">
+             <span className="text-[10px] text-gray-500 tracking-widest">CLEARANCE</span>
+             <div className="flex items-center gap-2">
+                 <span className="text-2xl text-white font-mono font-bold">LVL {userLevel}</span>
+                 <div className="w-2 h-2 bg-[#00ff41] rounded-full animate-pulse shadow-[0_0_10px_#00ff41]"></div>
+             </div>
+         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {nftCollection.map((nft) => {
-          const isOwned = mintedItems.includes(nft.id);
-          const isMinting = loadingId === nft.id;
+      {/* GRIGLIA NFT */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+         {nfts.map(nft => {
+            const isLocked = userLevel < nft.requiredLevel;
+            const isOwned = ownedIds.includes(nft.id);
 
-          return (
-            <div key={nft.id} className={`border ${isOwned ? 'border-[#00ff41] bg-[#00ff41]/5' : 'border-gray-800 bg-black'} p-1 relative group`}>
-              {/* Header Card */}
-              <div className="flex justify-between items-center p-2 bg-[#00ff41]/10 mb-1">
-                <span className="text-[10px] font-bold tracking-widest">{nft.type}</span>
-                {isOwned ? <CheckCircle size={14} /> : <Box size={14} />}
-              </div>
-
-              {/* Image Container */}
-              <div className="h-48 border border-[#00ff41]/20 flex items-center justify-center relative overflow-hidden bg-tactical-grid">
-                <div className="text-8xl filter drop-shadow-[0_0_10px_#00ff41]">
-                  {nft.image}
+            return (
+                <div key={nft.id} className="h-80">
+                    <TacticalNftCard 
+                        id={nft.id}
+                        name={nft.name}
+                        type={nft.type}
+                        rarity={nft.rarity}
+                        imageIcon={nft.icon}
+                        price={isLocked ? `LVL ${nft.requiredLevel}` : nft.price}
+                        isLocked={isLocked}
+                        isOwned={isOwned}
+                        onMintClick={() => handleSimulatedMint(nft.id, nft.name)}
+                    />
                 </div>
-                {nft.isLocked && !isOwned && (
-                  <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center backdrop-blur-sm">
-                    <Lock className="mb-2 text-gray-500" />
-                    <span className="text-xs text-gray-500">LOCKED</span>
-                    <span className="text-[10px] text-gray-600 mt-1">{nft.req}</span>
-                  </div>
-                )}
-              </div>
-
-              {/* Info & Action */}
-              <div className="p-4">
-                <h3 className="text-xl font-bold text-white mb-1">{nft.name}</h3>
-                <p className="text-xs text-gray-400 mb-4 h-8">{nft.desc}</p>
-                
-                <div className="flex justify-between items-center border-t border-[#00ff41]/20 pt-4">
-                  <span className="text-sm font-bold">{nft.price}</span>
-                  
-                  {isOwned ? (
-                    <button disabled className="px-4 py-2 bg-[#00ff41] text-black font-bold text-xs cursor-default">
-                      OWNED
-                    </button>
-                  ) : (
-                    <button 
-                      onClick={() => handleMint(nft.id)}
-                      disabled={nft.isLocked || isMinting}
-                      className={`
-                        px-6 py-2 border text-xs font-bold transition-all uppercase
-                        ${nft.isLocked 
-                          ? 'border-gray-700 text-gray-600 cursor-not-allowed' 
-                          : 'border-[#00ff41] hover:bg-[#00ff41] hover:text-black text-[#00ff41]'
-                        }
-                      `}
-                    >
-                      {isMinting ? 'MINTING...' : 'MINT NFT'}
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-          );
-        })}
+            );
+         })}
       </div>
-    </motion.div>
+
+    </div>
   );
 }

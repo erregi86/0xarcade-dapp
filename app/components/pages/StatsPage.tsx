@@ -29,9 +29,13 @@ export function StatsPage() {
             <h2 className="mb-2 tracking-wider font-bold text-2xl">NEURAL ANALYTICS</h2>
             <p className="text-xs opacity-70">OPERATIVE DOSSIER: {profile?.username || 'UNKNOWN'}</p>
         </div>
-        <div className="text-4xl font-bold border border-[#00ff41] px-4 py-2 bg-[#00ff41]/10">
-            LVL {profile?.level || 1}
-        </div>
+        <div className="flex flex-col items-end gap-1">
+             <span className="text-[10px] text-gray-500 tracking-widest">CLEARANCE</span>
+             <div className="flex items-center gap-2">
+                 <span className="text-2xl text-white font-mono font-bold">LVL {profile?.level || 1}</span>
+                 <div className="w-2 h-2 bg-[#00ff41] rounded-full animate-pulse shadow-[0_0_10px_#00ff41]"></div>
+             </div>
+         </div>
       </div>
 
       {/* Main Stats Grid */}

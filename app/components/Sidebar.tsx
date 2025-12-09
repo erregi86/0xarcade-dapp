@@ -1,8 +1,8 @@
 'use client';
 
-import { Gamepad2, Trophy, BarChart3, Settings, Power, X } from 'lucide-react';
+import { Gamepad2, Trophy, BarChart3, Settings, Power, X, Box } from 'lucide-react';
 import { useDisconnect, useAccount } from 'wagmi';
-import { Logo0x } from './Logo0x'; // 🟢 Importiamo il Logo
+import { Logo0x } from './Logo0x';
 
 interface SidebarProps {
   activePage: string;
@@ -30,22 +30,20 @@ export function Sidebar({ activePage, onNavigate, isOpen = false, onClose }: Sid
         ${isOpen ? 'translate-x-0' : '-translate-x-full'} 
         md:translate-x-0
       `}>
-        {/* LOGO & HEADER AGGIORNATI */}
+        {/* LOGO HEADER */}
         <div className="border-b border-[#00ff41] p-6 flex justify-between items-start">
           <div 
             onClick={() => { onNavigate('home'); onClose?.(); }} 
             className="cursor-pointer group"
           >
             <div className="flex items-center gap-3 mb-1">
-               {/* Icona 0x */}
                <Logo0x className="text-[#00ff41] group-hover:scale-110 transition-transform" />
-               {/* Testo Arcade */}
                <h1 className="text-[#00ff41] tracking-widest font-bold text-xl font-[Press Start 2P]">
-                 ARCADE
+                 0xARCADE
                </h1>
             </div>
             <div className="text-[9px] text-[#00ff41] mt-1 opacity-60 font-mono tracking-[0.2em] pl-1">
-              {'>'} DeFi Gaming Protocol
+              {'>'} DEFI PROTOCOL v1.0
             </div>
           </div>
           
@@ -54,9 +52,11 @@ export function Sidebar({ activePage, onNavigate, isOpen = false, onClose }: Sid
           </button>
         </div>
 
-        {/* Navigation */}
-        <nav className="flex-1 p-4">
+        {/* NAVIGATION */}
+        <nav className="flex-1 p-4 overflow-y-auto">
           <div className="space-y-2">
+            <p className="px-2 text-[10px] text-[#00ff41] opacity-70 font-bold uppercase mb-2 tracking-[0.2em]">:: MAIN_MODULES ::</p>
+            
             {menuItems.map((item) => {
               const Icon = item.icon;
               const isActive = activePage === item.id;
@@ -80,10 +80,33 @@ export function Sidebar({ activePage, onNavigate, isOpen = false, onClose }: Sid
                 </button>
               );
             })}
+
+            {/* 🟢 SEZIONE NUOVA: ASSETS / INVENTORY */}
+            <div className="pt-6 mt-2 border-t border-[#00ff41]/20">
+                <p className="px-2 text-[10px] text-[#00ff41] opacity-70 font-bold uppercase mb-2 tracking-[0.2em]">:: ASSETS ::</p>
+                
+                <button
+                  onClick={() => {
+                    onNavigate('inventory');
+                    onClose?.();
+                  }}
+                  className={`
+                    w-full flex items-center gap-3 px-4 py-3 
+                    border font-mono transition-all duration-150 group
+                    ${activePage === 'inventory'
+                      ? 'bg-[#00ff41] text-[#050505] border-[#00ff41] font-bold' 
+                      : 'bg-transparent text-[#00ff41] border-transparent hover:border-[#00ff41]/50 hover:bg-[#00ff41]/10'}
+                  `}
+                >
+                  <Box size={16} />
+                  <span className="text-xs tracking-wide flex-1 text-left">INVENTORY</span>
+                  <span className={`text-[8px] px-1 border ${activePage === 'inventory' ? 'border-black' : 'border-[#00ff41]'} `}>NEW</span>
+                </button>
+            </div>
           </div>
         </nav>
 
-        {/* Footer */}
+        {/* FOOTER */}
         <div className="border-t border-[#00ff41] p-4">
           {isConnected ? (
             <button 
