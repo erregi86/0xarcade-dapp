@@ -1,0 +1,150 @@
+/* 1. IMPORT FONT GOOGLE UFFICIALE (Fix per Vercel) */
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Share+Tech+Mono&display=swap');
+
+@import "tailwindcss";
+
+@theme {
+  --color-cyber-black: #050505;
+  --color-neon-green: #00ff41;
+  --color-dark-green: #003d1a;
+  
+  /* Riferimento preciso ai font importati sopra */
+  --font-family-pixel: 'Press Start 2P', cursive;
+  --font-family-mono: 'Share Tech Mono', monospace;
+}
+
+@layer base {
+  body {
+    font-family: 'Share Tech Mono', monospace; /* Fallback esplicito */
+    background-color: var(--color-cyber-black);
+    color: var(--color-neon-green);
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Press Start 2P', cursive; /* Fallback esplicito */
+  }
+}
+
+/* Tactical grid background */
+.tactical-grid {
+  background-image: 
+    linear-gradient(rgba(0, 255, 65, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 255, 65, 0.05) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+/* Scanline effect */
+.scanlines {
+  position: relative;
+}
+
+.scanlines::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    transparent 50%,
+    rgba(0, 255, 65, 0.03) 50%
+  );
+  background-size: 100% 4px;
+  pointer-events: none;
+  z-index: 999;
+}
+
+/* ... (Tutto il CSS precedente resta uguale fino a qui) ... */
+
+/* =========================================
+   RAINBOW KIT TACTICAL OVERRIDES (FINAL)
+   ========================================= */
+
+/* 1. IL MODALE (Contenitore Principale) */
+[data-rk] .ju367v8r { 
+  background-color: #050505 !important;
+  border: 1px solid #00ff41 !important;
+  box-shadow: 0 0 40px rgba(0, 255, 65, 0.1) !important;
+  border-radius: 0px !important;
+}
+
+/* 2. Titolo "Connect Wallet" */
+[data-rk] [role="dialog"] [id^="rk_connect_title"] {
+  font-family: 'Press Start 2P', cursive !important;
+  font-size: 12px !important;
+  color: #00ff41 !important;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  text-shadow: 0 0 5px rgba(0, 255, 65, 0.5);
+  margin-bottom: 10px !important; /* Spazio extra sotto il titolo */
+}
+
+/* 3. Bottoni Lista Wallet */
+[data-rk] [role="dialog"] button {
+  border-radius: 0px !important;
+  transition: all 0.2s ease !important;
+  border: 1px solid transparent !important;
+  margin-bottom: 4px !important; /* Separazione tra i wallet */
+}
+
+/* Hover sui wallet: Sfondo verde e Bordo verde */
+[data-rk] [role="dialog"] button:hover {
+  background-color: rgba(0, 255, 65, 0.1) !important;
+  border-color: #00ff41 !important;
+  transform: translateX(4px);
+  box-shadow: 0 0 10px rgba(0, 255, 65, 0.2) !important;
+}
+
+/* --- 4. FIX LOGHI WALLET (Senza sfondi grigi) --- */
+[data-rk] [role="dialog"] button div {
+  background-color: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
+[data-rk] [role="dialog"] [role="img"] {
+  background: transparent !important;
+}
+
+[data-rk] [role="dialog"] button img {
+  border-radius: 0px !important;
+  opacity: 1 !important;
+  filter: none !important;
+  box-shadow: none !important;
+  width: 28px !important; 
+  height: 28px !important;
+  min-width: 28px !important;
+}
+
+/* 5. Bottone Chiudi (X) */
+[data-rk] [role="dialog"] [aria-label="Close"] {
+  background: transparent !important;
+  color: #00ff41 !important;
+  border: 1px solid #00ff41 !important; /* Anche la X ha un bordo ora */
+  padding: 4px !important;
+  width: 24px !important;
+  height: 24px !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+[data-rk] [role="dialog"] [aria-label="Close"]:hover {
+  background-color: #ff003c !important;
+  border-color: #ff003c !important;
+  color: black !important;
+  transform: none !important;
+}
+
+/* 6. Scanline SOLO sullo sfondo del modale */
+[data-rk] [role="dialog"]::after {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: linear-gradient(transparent 50%, rgba(0, 255, 65, 0.02) 50%);
+  background-size: 100% 4px;
+  pointer-events: none;
+  z-index: 0;
+}

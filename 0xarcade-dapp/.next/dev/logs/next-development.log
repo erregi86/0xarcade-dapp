@@ -1,0 +1,4 @@
+[00:06:53.501] Server  ERROR    ⨯ Module not found: Error: Can't resolve 'next-flight-client-entry-loader' in '/Users/rodolfo.gallucci/0xarcade-dapp/0xarcade-dapp'
+[00:06:53.625] Server  ERROR   Error: ENOENT: no such file or directory, scandir '/Users/rodolfo.gallucci/0xarcade-dapp/0xarcade-dapp/app'
+[00:06:53.628] Server  ERROR    ⨯ "unhandledRejection:" Error: ENOENT: no such file or directory, scandir '/Users/rodolfo.gallucci/0xarcade-dapp/0xarcade-dapp/app'
+[00:06:53.629] Server  ERROR    ⨯ "unhandledRejection: " Error: ENOENT: no such file or directory, scandir '/Users/rodolfo.gallucci/0xarcade-dapp/0xarcade-dapp/app'
