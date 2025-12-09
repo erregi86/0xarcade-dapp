@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useAccount } from 'wagmi';
-import { getUserProfile, updateUsername } from '../../lib/db';
+import { getUserProfile, updateUsername } from '../../lib/db'; // Ensure this path is correct
 import { Save, User, Shield } from 'lucide-react';
 
 export function SettingsPage() {
@@ -12,6 +12,7 @@ export function SettingsPage() {
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState('');
 
+  // Fetch current profile on mount
   useEffect(() => {
     if (address) {
       getUserProfile(address).then(({ data }) => {
@@ -26,7 +27,10 @@ export function SettingsPage() {
     try {
       await updateUsername(address, username);
       setMsg('IDENTITY UPDATED SUCCESSFULLY');
+      // Optional: Emit a custom event if you need immediate update elsewhere without reload
+      // window.dispatchEvent(new Event('profileUpdated')); 
     } catch (e) {
+      console.error(e);
       setMsg('ERROR UPDATING IDENTITY');
     }
     setLoading(false);
@@ -77,7 +81,6 @@ export function SettingsPage() {
               <span className="text-[#00ff41]">{address}</span>
             </div>
 
-            {/* 🟢 BOTTONE FIXATO: Stile coerente col resto dell'app */}
             <button 
               onClick={handleSave}
               disabled={loading}

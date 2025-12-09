@@ -2,41 +2,314 @@
 
 import { useState, useEffect } from 'react';
 import { AnimatePresence } from 'framer-motion';
-import { useAccount, useConnect } from 'wagmi';
+import { useAccount } from 'wagmi';
 import { useConnectModal } from '@rainbow-me/rainbowkit';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
 import TacticalAlert from './components/TacticalAlert';
+// 🟢 FIX: Importiamo la funzione dal tuo file db.ts (percorso relativo o alias)
+// Se lib è nella root e page.tsx in app/, usa '../lib/db'
+import { getLeaderboard } from './lib/db';
 
-// Import Icone
-import { RunnerIcon, UFOIcon, BrickIcon, VirusIcon } from './components/PixelIcons';
+import { 
+  X, Share2, Copy, Trophy, Medal, Award, Target, MessageCircle, Send,
+  Gamepad2, Cpu, Shield, Zap, Loader2 
+} from 'lucide-react';
 
-// Import Pagine
+// Import Pagine Esistenti
 import { HomePage } from './components/pages/HomePage';
 import { StatsPage } from './components/pages/StatsPage';
-import { LeaderboardPage } from './components/pages/LeaderboardPage';
 import { SettingsPage } from './components/pages/SettingsPage';
 import { GamePage } from './components/pages/GamePage';
-import { InventoryPage } from './components/pages/InventoryPage'; // 🟢 FIX: ECCO L'IMPORT CHE MANCAVA
+import { InventoryPage } from './components/pages/InventoryPage';
 
-// Dati Giochi (4 Giochi)
+// --- TYPES & DATA ---
 const GAMES = [
-  { id: 1, name: 'NET RUNNER', code: 'NR_01', desc: 'EVADE FIREWALLS', icon: <RunnerIcon /> },
-  { id: 2, name: 'CYBER FLAP', code: 'CF_99', desc: 'PRECISION FLIGHT', icon: <UFOIcon /> },
-  { id: 3, name: 'DATA BREAKER', code: 'DB_X', desc: 'DECRYPT BLOCKS', icon: <BrickIcon /> },
-  { id: 4, name: '0xBREACH', code: 'ZX_B', desc: 'HYBRID PUZZLE RUNNER', icon: <VirusIcon /> }, 
+  { id: 1, name: 'NET RUNNER', code: 'NR_01', desc: 'EVADE FIREWALLS', icon: <Gamepad2 /> },
+  { id: 2, name: 'CYBER FLAP', code: 'CF_99', desc: 'PRECISION FLIGHT', icon: <Zap /> },
+  { id: 3, name: 'DATA BREAKER', code: 'DB_X', desc: 'DECRYPT BLOCKS', icon: <Cpu /> },
+  { id: 4, name: '0xBREACH', code: 'ZX_B', desc: 'HYBRID PUZZLE RUNNER', icon: <Shield /> }, 
 ];
 
 type Page = 'home' | 'stats' | 'leaderboard' | 'settings' | 'game' | 'inventory';
 
+interface Player {
+  rank: number;
+  address: string;
+  username?: string;
+  score: string;
+  winRate: string;
+  status: 'online' | 'offline' | 'busy';
+}
+
+// --- COMPONENTE: SHARE MODAL ---
+const ShareModal = ({ data, onClose }: { data: { score: string, rank: number } | null, onClose: () => void }) => {
+  if (!data) return null;
+
+  const shareText = `I am Rank #${data.rank} on 0xArcade with ${data.score} PTS. Can you beat the Chiliz Elite? 🌶️🕹️ #0xArcade #GameFi $CHZ`;
+  const url = "https://0xarcade.gg"; 
+
+  const handleShare = (platform: 'x' | 'wa' | 'tg' | 'copy') => {
+    switch (platform) {
+      case 'x':
+        window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(url)}`, '_blank');
+        break;
+      case 'wa':
+        window.open(`https://wa.me/?text=${encodeURIComponent(shareText + " " + url)}`, '_blank');
+        break;
+      case 'tg':
+        window.open(`https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(shareText)}`, '_blank');
+        break;
+      case 'copy':
+        navigator.clipboard.writeText(`${shareText} ${url}`);
+        break;
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+      <div className="w-full max-w-sm border-2 border-[#00ff41] bg-[#050505] p-6 shadow-[0_0_30px_rgba(0,255,65,0.2)] tactical-grid relative">
+        <button onClick={onClose} className="absolute top-4 right-4 text-[#00ff41] hover:text-white transition-colors">
+            <X size={20} />
+        </button>
+        
+        <h3 className="text-xl font-[Press Start 2P] text-[#00ff41] mb-6 text-center">BROADCAST_DATA</h3>
+        
+        <div className="grid grid-cols-2 gap-4 font-mono text-xs">
+          <button onClick={() => handleShare('x')} className="flex flex-col items-center justify-center p-4 border border-[#00ff41]/50 hover:bg-[#00ff41] hover:text-black transition-all group gap-2">
+            <Share2 size={24} />
+            <span>X / TWITTER</span>
+          </button>
+          
+          <button onClick={() => handleShare('wa')} className="flex flex-col items-center justify-center p-4 border border-[#00ff41]/50 hover:bg-[#00ff41] hover:text-black transition-all group gap-2">
+            <MessageCircle size={24} />
+            <span>WHATSAPP</span>
+          </button>
+
+          <button onClick={() => handleShare('tg')} className="flex flex-col items-center justify-center p-4 border border-[#00ff41]/50 hover:bg-[#00ff41] hover:text-black transition-all group gap-2">
+            <Send size={24} />
+            <span>TELEGRAM</span>
+          </button>
+
+          <button onClick={() => handleShare('copy')} className="flex flex-col items-center justify-center p-4 border border-[#00ff41]/50 hover:bg-[#00ff41] hover:text-black transition-all group gap-2">
+            <Copy size={24} />
+            <span>COPY LINK</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// --- COMPONENTE: BETTING MODAL ---
+const BettingModal = ({ opponent, onClose }: { opponent: Player | null, onClose: () => void }) => {
+  const [selectedGame, setSelectedGame] = useState(GAMES[0].id);
+  const [wager, setWager] = useState("50");
+
+  if (!opponent) return null;
+
+  const displayName = opponent.username || `${opponent.address.substring(0,6)}...${opponent.address.slice(-4)}`;
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+      <div className="w-full max-w-md border-2 border-[#00ff41] bg-[#050505] p-6 shadow-[0_0_30px_rgba(0,255,65,0.2)] tactical-grid">
+        <div className="flex justify-between items-start mb-6 border-b border-[#00ff41]/30 pb-4">
+          <div>
+            <h3 className="text-xl font-[Press Start 2P] text-[#00ff41] mb-2">INIT_CHALLENGE</h3>
+            <p className="font-mono text-xs text-[#00ff41]/70">Target: {displayName}</p>
+          </div>
+          <button onClick={onClose} className="text-[#00ff41] hover:text-red-500 transition-colors">
+            <X size={24} />
+          </button>
+        </div>
+
+        <div className="space-y-6 font-mono">
+          <div className="space-y-2">
+            <label className="text-xs tracking-widest text-[#00ff41]/80">WAGER AMOUNT ($CHZ)</label>
+            <div className="flex items-center border border-[#00ff41] bg-[#00ff41]/5 p-3">
+              <span className="text-[#00ff41] mr-2 font-bold">CHZ</span>
+              <input 
+                type="number" 
+                value={wager}
+                onChange={(e) => setWager(e.target.value)}
+                className="bg-transparent border-none outline-none text-[#00ff41] w-full placeholder-[#00ff41]/30 focus:ring-0 text-right font-bold"
+                autoFocus
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-xs tracking-widest text-[#00ff41]/80">SELECT PROTOCOL</label>
+            <div className="grid grid-cols-1 gap-2">
+              {GAMES.map((game) => (
+                <button
+                  key={game.id}
+                  onClick={() => setSelectedGame(game.id)}
+                  className={`flex items-center gap-3 p-2 border transition-all text-xs text-left
+                    ${selectedGame === game.id 
+                      ? 'border-[#00ff41] bg-[#00ff41] text-black font-bold' 
+                      : 'border-[#00ff41]/30 text-[#00ff41]/60 hover:border-[#00ff41]'
+                    }
+                  `}
+                >
+                  <span className="scale-75">{game.icon}</span>
+                  <span>{game.name}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-8 flex gap-4">
+          <button 
+            onClick={onClose}
+            className="flex-1 py-3 border border-[#00ff41]/50 text-[#00ff41]/50 font-mono text-xs hover:bg-[#00ff41]/10 hover:text-[#00ff41] transition-all"
+          >
+            CANCEL
+          </button>
+          <button className="flex-1 py-3 bg-[#00ff41] text-black font-bold font-mono text-xs hover:bg-[#00ff41]/90 transition-all animate-pulse">
+            SEND {wager} CHZ {'>'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// --- COMPONENTE LOCALE: LEADERBOARD SOCIAL HUB ---
+const LeaderboardSection = ({ onChallenge, onShare }: { onChallenge: (p: Player) => void, onShare: (p: Player) => void }) => {
+  const [players, setPlayers] = useState<Player[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // 🟢 FIX: Fetch usando la funzione da db.ts
+  useEffect(() => {
+    const fetchLeaderboard = async () => {
+      try {
+        setLoading(true);
+        // Chiamata alla funzione helper
+        const { data, error } = await getLeaderboard();
+
+        if (error) {
+          console.error('Supabase Error:', error);
+          setPlayers([]); 
+        } else if (data) {
+          const mappedPlayers: Player[] = data.map((user: any, index: number) => ({
+            rank: index + 1,
+            address: user.wallet_address || user.id, // Fallback
+            username: user.username, 
+            score: user.score?.toLocaleString() || '0',
+            winRate: user.win_rate ? `${user.win_rate}%` : '0%',
+            status: user.status || 'offline'
+          }));
+          setPlayers(mappedPlayers);
+        }
+      } catch (err) {
+        console.error('Fetch Error:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLeaderboard();
+  }, []);
+
+  const getRankIcon = (rank: number) => {
+    switch (rank) {
+      case 1: return <Trophy className="text-yellow-400" size={24} />;
+      case 2: return <Medal className="text-gray-300" size={24} />;
+      case 3: return <Award className="text-orange-400" size={24} />;
+      default: return <span className="font-mono text-[#00ff41] text-xl">#{rank}</span>;
+    }
+  };
+
+  return (
+    <div className="w-full max-w-7xl mx-auto p-6 md:p-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="flex flex-col md:flex-row justify-between items-end border-b-2 border-[#00ff41] pb-4 mb-8 gap-4">
+        <div>
+          <h2 className="text-3xl font-[Press Start 2P] mb-2 text-[#00ff41]">LEADERBOARD</h2>
+          <p className="font-mono text-xs text-[#00ff41]/60 tracking-widest">// GLOBAL CHILIZ ELITE</p>
+        </div>
+        <div className="font-mono text-xs text-[#00ff41] border border-[#00ff41] px-3 py-1 bg-[#00ff41]/10">
+          SEASON 1: ACTIVE
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        {loading ? (
+          <div className="flex justify-center items-center py-20 text-[#00ff41]">
+            <Loader2 className="animate-spin mr-2" /> ACCESSING DATABASE...
+          </div>
+        ) : players.length === 0 ? (
+          <div className="text-center py-10 border border-[#00ff41]/30 text-[#00ff41]/50 font-mono">
+            NO DATA FOUND ON CHAIN
+          </div>
+        ) : (
+          players.map((player) => {
+            const displayName = player.username 
+              ? player.username 
+              : `${player.address.substring(0,6)}...${player.address.slice(-4)}`;
+
+            return (
+              <div 
+                key={player.rank} 
+                className="flex flex-col md:flex-row items-center justify-between border border-[#00ff41]/30 bg-[#050505] p-4 hover:border-[#00ff41] hover:bg-[#00ff41]/5 transition-all group"
+              >
+                <div className="flex items-center gap-6 w-full md:w-auto">
+                  <div className="w-12 flex justify-center">
+                    {getRankIcon(player.rank)}
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono font-bold text-[#00ff41] text-lg">
+                        {displayName}
+                      </span>
+                      <span className={`w-2 h-2 rounded-full ${player.status === 'online' ? 'bg-[#00ff41] animate-pulse' : 'bg-gray-600'}`} />
+                    </div>
+                    <div className="text-[10px] font-mono opacity-60 text-[#00ff41] mt-1">
+                      WIN RATE: {player.winRate} // SCORE: {player.score} PTS
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 mt-4 md:mt-0 w-full md:w-auto">
+                  <button 
+                    onClick={() => onShare(player)}
+                    className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 border border-[#00ff41]/30 text-[#00ff41]/70 hover:text-[#00ff41] hover:border-[#00ff41] font-mono text-[10px] transition-all"
+                  >
+                    <Share2 size={14} /> SHARE
+                  </button>
+                  
+                  {player.status !== 'offline' && (
+                    <button 
+                      onClick={() => onChallenge(player)}
+                      className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-[#00ff41] text-black font-bold font-mono text-[10px] hover:scale-105 transition-transform shadow-[0_0_10px_rgba(0,255,65,0.4)]"
+                    >
+                      <Target size={14} /> CHALLENGE
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+    </div>
+  );
+};
+
+// --- MAIN COMPONENT ---
 export default function Home() {
   const [mounted, setMounted] = useState(false);
   const [currentPage, setCurrentPage] = useState<Page>('home');
   const [selectedGameId, setSelectedGameId] = useState<number | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  
+  const [selectedOpponent, setSelectedOpponent] = useState<Player | null>(null);
+  const [shareData, setShareData] = useState<Player | null>(null);
 
   const { isConnected } = useAccount();
-  const { openConnectModal } = useConnectModal();
+  const connectModal = useConnectModal();
+  const openConnectModal = connectModal?.openConnectModal;
 
   const [alertState, setAlertState] = useState<{
     isOpen: boolean;
@@ -50,7 +323,6 @@ export default function Home() {
   useEffect(() => { setMounted(true); }, []);
   if (!mounted) return null;
 
-  // Navigazione Protetta
   const handleNavigation = (page: string) => {
     const targetPage = page as Page;
     const protectedPages = ['leaderboard', 'stats', 'inventory', 'settings'];
@@ -84,7 +356,7 @@ export default function Home() {
     switch(page) {
       case 'home': return 'ARCADE MODULES';
       case 'stats': return 'NEURAL STATS';
-      case 'leaderboard': return 'GLOBAL RANKING';
+      case 'leaderboard': return 'SOCIAL HUB'; 
       case 'settings': return 'SYSTEM CONFIG';
       case 'game': return 'ACTIVE SIMULATION';
       case 'inventory': return 'DIGITAL ARMORY';
@@ -95,7 +367,6 @@ export default function Home() {
   return (
     <div className="flex h-screen w-screen bg-[#050505] text-[#00ff41] font-mono overflow-hidden tactical-grid scanlines">
       
-      {/* Alert Globale */}
       <TacticalAlert 
         isOpen={alertState.isOpen}
         title={alertState.title}
@@ -106,7 +377,24 @@ export default function Home() {
         onClose={() => setAlertState(prev => ({ ...prev, isOpen: false }))}
       />
 
-      {/* Sidebar */}
+      <AnimatePresence>
+        {selectedOpponent && (
+          <BettingModal 
+            key="betting"
+            opponent={selectedOpponent} 
+            onClose={() => setSelectedOpponent(null)} 
+          />
+        )}
+        
+        {shareData && (
+          <ShareModal 
+            key="share"
+            data={shareData}
+            onClose={() => setShareData(null)}
+          />
+        )}
+      </AnimatePresence>
+
       <div className={`
         fixed inset-y-0 left-0 z-50 w-64 bg-black border-r border-[#00ff41] transform transition-transform duration-300 md:relative md:translate-x-0
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
@@ -119,10 +407,7 @@ export default function Home() {
         />
       </div>
 
-      {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0 bg-black/80 backdrop-blur-sm relative z-10">
-        
-        {/* Header */}
         <div className="h-20 flex-shrink-0 border-b border-[#00ff41] bg-black/90 px-6 flex items-center">
            <button onClick={() => setIsSidebarOpen(true)} className="md:hidden mr-4 text-2xl border border-[#00ff41] px-2 text-[#00ff41]">☰</button>
            <div className="flex-1">
@@ -130,18 +415,19 @@ export default function Home() {
            </div>
         </div>
 
-        {/* Content Body */}
         <main className="flex-1 overflow-y-auto p-0 scroll-smooth">
           <AnimatePresence mode="wait">
-            
-            {/* HomePage riceve la lista GAMES aggiornata */}
             {currentPage === 'home' && <HomePage key="home" onGameSelect={handleGameSelect} gamesList={GAMES} />}
-            
             {currentPage === 'stats' && <StatsPage key="stats" />}
-            {currentPage === 'leaderboard' && <LeaderboardPage key="leaderboard" />}
+            {currentPage === 'leaderboard' && (
+              <LeaderboardSection 
+                key="leaderboard" 
+                onChallenge={setSelectedOpponent}
+                onShare={setShareData}
+              />
+            )}
             {currentPage === 'settings' && <SettingsPage key="settings" />}
             {currentPage === 'inventory' && <InventoryPage key="inventory" />}
-            
             {currentPage === 'game' && selectedGameId && (
               <GamePage 
                 key="game" 
@@ -154,7 +440,6 @@ export default function Home() {
         </main>
       </div>
 
-      {/* Mobile Overlay */}
       {isSidebarOpen && (
         <div className="fixed inset-0 bg-black/80 z-40 md:hidden" onClick={() => setIsSidebarOpen(false)} />
       )}
