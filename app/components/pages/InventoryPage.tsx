@@ -89,7 +89,7 @@ export function InventoryPage() {
       {/* HEADER PAGINA */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-10 border-b-2 border-[#00ff41]/30 pb-6 gap-4">
          <div>
-            <h2 className="text-2xl md:text-3xl text-white font-[Press Start 2P] mb-3 flex items-center gap-3">
+            <h2 className="text-2xl md:text-3xl font-[Press Start 2P] mb-3 flex items-center gap-3">
                 <Box size={32} className="text-[#00ff41]" /> ARMORY
             </h2>
             <p className="text-xs text-[#00ff41] font-mono opacity-70 tracking-widest">

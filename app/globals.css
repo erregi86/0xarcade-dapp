@@ -148,3 +148,27 @@
   pointer-events: none;
   z-index: 0;
 }
+
+/* --- RAINBOWKIT OVERRIDES --- */
+
+/* Rimuove il bordo dal bottone "Learn More" / "What is a wallet" nel footer del modale */
+[data-rk] button[type="button"] {
+  border-width: 0px !important; 
+}
+
+/* Rimuove i bordi divisori tra i wallet nella lista mobile */
+[data-rk] .iekbcc0 {
+  border-width: 0px !important;
+  border-bottom-width: 0px !important;
+  border-top-width: 0px !important;
+}
+
+/* Forza la rimozione di bordi residui nei contenitori delle liste */
+[data-rk] div[role="dialog"] button {
+    border: none !important;
+}
+
+/* Opzionale: Rimuove l'ombra/bordo superiore del footer "Scan with Phone" se presente */
+[data-rk] [style*="border-top"] {
+    border-top: none !important;
+}

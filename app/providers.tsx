@@ -23,7 +23,7 @@ const spicyTestnet = defineChain({
 
 const config = getDefaultConfig({
   appName: '0xArcade',
-  projectId: 'YOUR_PROJECT_ID', 
+  projectId: '18e86e0726010581a6bfc6e2b82a08cc', 
   chains: [spicyTestnet],
   ssr: true, 
 });

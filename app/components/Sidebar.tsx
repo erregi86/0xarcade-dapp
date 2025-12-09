@@ -39,7 +39,7 @@ export function Sidebar({ activePage, onNavigate, isOpen = false, onClose }: Sid
             <div className="flex items-center gap-3 mb-1">
                <Logo0x className="text-[#00ff41] group-hover:scale-110 transition-transform" />
                <h1 className="text-[#00ff41] tracking-widest font-bold text-xl font-[Press Start 2P]">
-                 0xARCADE
+                 ARCADE
                </h1>
             </div>
             <div className="text-[9px] text-[#00ff41] mt-1 opacity-60 font-mono tracking-[0.2em] pl-1">
