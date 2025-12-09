@@ -4,11 +4,19 @@
 ![Stack](https://img.shields.io/badge/NEXT.JS-16-00ff41?style=for-the-badge&labelColor=050505)
 ![License](https://img.shields.io/badge/LICENSE-MIT-00ff41?style=for-the-badge&labelColor=050505)
 
-**0xArcade** is a decentralized application (dApp) combining high-performance DeFi utility with a retro-futuristic "Arcade" aesthetic. Built for speed, responsiveness, and immersion.
+**0xArcade** is a decentralized application (dApp) built on the Chiliz Chain that allows users to compete in skill-based arcade games for crypto rewards. Unlike traditional gaming platforms, 0xArcade features a hybrid Web2.5 architecture, combining the speed of a centralized database for real-time matchmaking and leaderboards with the security of blockchain for wagers and payouts.
+
+Operatives can connect their wallets, build their reputation on the global leaderboard, and issue direct PVP Challenges to other players, staking $CHZ on the outcome.
 
 > **// SYSTEM MESSAGE:** > Welcome to the grid. The protocol connects nostalgic arcade visuals with modern on-chain liquidity.
 
 ## ⚡ Key Features
+
+### 🎮 Tactical Arcade Suite
+Three distinct game modules tuned for progressive difficulty and competitive play:
+* **NET RUNNER**: High-velocity endless runner. Dodge firewalls, increase speed, survive the grid.
+* **CYBER FLAP**: Precision flight simulator with dynamic gap narrowing.
+* **DATA BREAKER**: A tactical brick-breaker with keyboard/mouse dual control and multi-level progression.
 
 ### 🖥️ Cyberpunk Terminal UI
 A custom design system built on **Tailwind CSS**, strictly adhering to the `#00ff41` (Neon Green) and `#050505` (Void Black) palette. Features include CRT flicker effects, monospace typography, and high-contrast accessibility.
