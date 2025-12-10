@@ -8,17 +8,15 @@ interface CyberFlapProps {
 }
 
 export default function CyberFlap({ onGameOver }: CyberFlapProps) {
-  // --- CONFIGURAZIONE ---
-  const GRAVITY = 0.6;        // Gravità solida
-  const JUMP = -8.5;          // Salto scattante
+  // --- TUNING CONFIG ---
+  const GRAVITY = 0.45;       // Molto più floaty (facile da controllare)
+  const JUMP = -7.5;          // Salto più morbido
   const PIPE_WIDTH = 60;
-  const PIPE_SPACING = 320;   // Distanza orizzontale
-  const INITIAL_GAP = 210;    // Gap iniziale (facile)
-  const MIN_GAP = 125;        // Gap minimo (difficile)
-  const INITIAL_SPEED = 3.5;  // Velocità partenza
-  const MAX_SPEED = 8.0;      // Velocità massima
-
-  // COLOR THEME: CYAN
+  const PIPE_SPACING = 350;   
+  const INITIAL_GAP = 230;    // Gap enorme all'inizio
+  const MIN_GAP = 140;        // Gap minimo meno punitivo
+  const INITIAL_SPEED = 2.2;  // Partenza lenta e ritmata
+  const MAX_SPEED = 7.0;      
   const PRIMARY_COLOR = '#00f3ff'; 
 
   // Refs
@@ -41,19 +39,16 @@ export default function CyberFlap({ onGameOver }: CyberFlapProps) {
     speedRef.current = INITIAL_SPEED;
     gapRef.current = INITIAL_GAP;
     
-    // Genera primi tubi
     for (let i = 0; i < 3; i++) {
       addPipe(500 + i * PIPE_SPACING);
     }
-    
     setScore(0);
     setGameState('playing');
   };
 
   const addPipe = (xOffset: number) => {
-    const minPipe = 60;
-    // Calcola altezza massima possibile per il tubo alto basandosi sul gap attuale
-    const maxPipe = 500 - gapRef.current - minPipe; 
+    const minPipe = 50;
+    const maxPipe = 500 - gapRef.current - minPipe;
     const topHeight = Math.floor(Math.random() * (maxPipe - minPipe + 1)) + minPipe;
     pipesRef.current.push({ x: xOffset, topHeight, passed: false });
   };
@@ -61,62 +56,51 @@ export default function CyberFlap({ onGameOver }: CyberFlapProps) {
   const loop = useCallback(() => {
     if (gameState !== 'playing') return;
 
-    // 1. FISICA BIRD
+    // Fisica Bird
     birdRef.current.velocity += GRAVITY;
     birdRef.current.y += birdRef.current.velocity;
 
-    // Soffitto/Pavimento
     if (birdRef.current.y > 490 || birdRef.current.y < 0) {
       handleGameOver();
       return;
     }
 
-    // 2. FISICA TUBI
+    // Fisica Tubi
     pipesRef.current.forEach(pipe => {
       pipe.x -= speedRef.current;
 
-      // Hitbox Bird (Leggermente ridotta per essere "buoni")
-      const birdLeft = 50 + 5; 
-      const birdRight = 50 + 30 - 5;
-      const birdTop = birdRef.current.y + 5;
-      const birdBottom = birdRef.current.y + 30 - 5;
+      const birdLeft = 50 + 8; // Hitbox molto perdonante (+8px)
+      const birdRight = 50 + 30 - 8;
+      const birdTop = birdRef.current.y + 8;
+      const birdBottom = birdRef.current.y + 30 - 8;
 
-      // Hitbox Pipe
       const pipeLeft = pipe.x;
       const pipeRight = pipe.x + PIPE_WIDTH;
       
-      // Controllo Collisione Orizzontale
       if (birdRight > pipeLeft && birdLeft < pipeRight) {
-        // Controllo Collisione Verticale (Tocca sopra O tocca sotto)
         if (birdTop < pipe.topHeight || birdBottom > pipe.topHeight + gapRef.current) {
           handleGameOver();
           return;
         }
       }
 
-      // Check Punteggio
       if (!pipe.passed && birdLeft > pipeRight) {
         pipe.passed = true;
         scoreRef.current += 1;
         setScore(scoreRef.current);
 
-        // 🟢 PROGRESSIONE DIFFICOLTÀ (Ogni tubo conta!)
-        // 1. Aumenta velocità leggermente
+        // Progressione Lenta
         if (speedRef.current < MAX_SPEED) speedRef.current += 0.05;
-        
-        // 2. Riduci il gap (più stretto)
-        if (gapRef.current > MIN_GAP) gapRef.current -= 2;
+        if (gapRef.current > MIN_GAP) gapRef.current -= 1.5;
       }
     });
 
-    // Rimuovi tubi usciti e aggiungi nuovi
     if (pipesRef.current.length > 0 && pipesRef.current[0].x < -PIPE_WIDTH) {
       pipesRef.current.shift();
       const lastPipeX = pipesRef.current[pipesRef.current.length - 1].x;
       addPipe(lastPipeX + PIPE_SPACING);
     }
 
-    // Render
     setBirdY(birdRef.current.y);
     setPipes([...pipesRef.current]);
     reqRef.current = requestAnimationFrame(loop);
@@ -129,12 +113,9 @@ export default function CyberFlap({ onGameOver }: CyberFlapProps) {
 
   const handleInput = () => {
     if (gameState === 'start') initGame();
-    else if (gameState === 'playing') {
-      birdRef.current.velocity = JUMP;
-    }
+    else if (gameState === 'playing') birdRef.current.velocity = JUMP;
   };
 
-  // Keyboard Support (Spacebar)
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       if (e.code === 'Space' || e.code === 'ArrowUp') {
@@ -154,23 +135,22 @@ export default function CyberFlap({ onGameOver }: CyberFlapProps) {
 
   return (
     <div 
-      className="relative w-full h-[500px] bg-[#050505] overflow-hidden border cursor-pointer select-none shadow-[0_0_20px_rgba(0,243,255,0.1)]"
+      className="relative w-full h-[500px] bg-[#050505] overflow-hidden border cursor-pointer select-none shadow-[0_0_20px_rgba(0,243,255,0.1)] touch-manipulation"
       style={{ borderColor: PRIMARY_COLOR }}
       onMouseDown={handleInput}
       onTouchStart={handleInput}
     >
       <div className="absolute top-4 right-4 z-10 text-right pointer-events-none">
         <div className="text-2xl font-[Press Start 2P]" style={{ color: PRIMARY_COLOR }}>{score}</div>
-        <div className="text-[10px] font-mono opacity-50" style={{ color: PRIMARY_COLOR }}>SPEED: {speedRef.current.toFixed(1)} | GAP: {gapRef.current}</div>
+        <div className="text-[10px] font-mono opacity-50" style={{ color: PRIMARY_COLOR }}>SPEED: {speedRef.current.toFixed(1)}</div>
       </div>
 
       {gameState === 'start' && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/60 z-20 pointer-events-none">
-          <p className="font-[Press Start 2P] animate-pulse" style={{ color: PRIMARY_COLOR }}>TAP / SPACE TO FLY</p>
+          <p className="font-[Press Start 2P] animate-pulse" style={{ color: PRIMARY_COLOR }}>TAP TO FLY</p>
         </div>
       )}
 
-      {/* Bird */}
       <div 
         className="absolute left-[50px] w-[30px] h-[30px] flex items-center justify-center rounded-sm shadow-[0_0_15px_#00f3ff]"
         style={{ 
@@ -182,7 +162,6 @@ export default function CyberFlap({ onGameOver }: CyberFlapProps) {
         <Zap size={20} className="text-black fill-current" />
       </div>
 
-      {/* Pipes */}
       {pipes.map((pipe, i) => (
         <div key={i}>
           <div 

@@ -8,12 +8,13 @@ interface NetRunnerProps {
 }
 
 export default function NetRunner({ onGameOver }: NetRunnerProps) {
-  // --- LOGICA TURBO (Mantenuta) ---
-  const INITIAL_SPEED = 9.0;
-  const MAX_SPEED = 22.0;
-  const SPEED_INCREMENT = 0.15;
-  const GRAVITY = 0.9;
-  const JUMP_STRENGTH = -13;
+  // --- TUNING CONFIG (EASY START) ---
+  const INITIAL_SPEED = 6.5;   // Molto più gestibile all'inizio
+  const MAX_SPEED = 18.0;      // Cap ragionevole
+  const SPEED_INCREMENT = 0.1; // Aumento più dolce
+  
+  const GRAVITY = 0.65;        // Salto meno "pesante", più floaty
+  const JUMP_STRENGTH = -11;   // Salto bilanciato
   const FLOOR_Y = 0;
 
   const [gameState, setGameState] = useState<'start' | 'playing' | 'gameover'>('start');
@@ -31,12 +32,11 @@ export default function NetRunner({ onGameOver }: NetRunnerProps) {
   const [obstData, setObstData] = useState({ x: 800, w: 30, h: 40 });
 
   const resetObstacle = () => {
-    // Dimensioni variabili (Gameplay)
     const newWidth = Math.floor(Math.random() * 20) + 25; 
-    const newHeight = Math.floor(Math.random() * 50) + 30; 
+    const newHeight = Math.floor(Math.random() * 40) + 30; // Meno alti all'inizio
     
-    // Distanza spawn
-    const minDistance = 400 + (speedRef.current * 10); 
+    // Distanza spawn più generosa
+    const minDistance = 450 + (speedRef.current * 10); 
     const randomBuffer = Math.random() * 300;
 
     obstacleRef.current = {
@@ -73,9 +73,9 @@ export default function NetRunner({ onGameOver }: NetRunnerProps) {
       }
     }
 
-    // 3. Collisione (Hitbox padding per essere fair)
-    const dinoX = 50 + 5; 
-    const dinoW = 40 - 10; 
+    // 3. Collisione (Hitbox perdonante)
+    const dinoX = 50 + 8; // Più margine
+    const dinoW = 40 - 16; 
     
     if (
       dinoX < obstacleRef.current.x + obstacleRef.current.width - 5 &&
@@ -117,6 +117,13 @@ export default function NetRunner({ onGameOver }: NetRunnerProps) {
     }
   }, [gameState]);
 
+  // Gestione Input Unificata (Mouse/Touch)
+  const handleInput = (e: any) => {
+    // Non prevenire default su touch per evitare blocchi
+    if (gameState === 'start') setGameState('playing');
+    else jump();
+  };
+
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       if (e.code === 'Space' || e.code === 'ArrowUp') {
@@ -137,11 +144,10 @@ export default function NetRunner({ onGameOver }: NetRunnerProps) {
 
   return (
     <div 
-      className="relative w-full h-[300px] bg-[#050505] border border-[#00ff41] overflow-hidden cursor-pointer select-none"
-      onMouseDown={() => gameState === 'start' ? setGameState('playing') : jump()}
-      onTouchStart={() => gameState === 'start' ? setGameState('playing') : jump()}
+      className="relative w-full h-[300px] bg-[#050505] border border-[#00ff41] overflow-hidden cursor-pointer select-none shadow-[0_0_20px_rgba(0,255,65,0.1)] touch-manipulation"
+      onMouseDown={handleInput}
+      onTouchStart={handleInput}
     >
-      {/* UI Info */}
       <div className="absolute top-4 right-4 text-right pointer-events-none z-10">
         <div className="text-2xl font-[Press Start 2P] text-[#00ff41]">{score}</div>
         <div className="text-[10px] font-mono text-[#00ff41]/60">SPEED: {(speedRef.current * 10).toFixed(0)}</div>
@@ -156,28 +162,24 @@ export default function NetRunner({ onGameOver }: NetRunnerProps) {
         </div>
       )}
 
-      {/* --- CLASSIC UI RESTORED --- */}
-
-      {/* Ground Line (Semplice) */}
+      {/* Classic Green Floor */}
       <div className="absolute bottom-10 left-0 right-0 h-1 bg-[#00ff41]/50"></div>
 
-      {/* Dino (Verde Semplice) */}
+      {/* Classic Dino */}
       <motion.div
         className="absolute bottom-10 left-[50px] w-10 h-10 bg-[#00ff41]"
         style={{ y: dinoY }}
       >
-        {/* Piccolo dettaglio occhio */}
         <div className="absolute top-2 right-2 w-2 h-2 bg-black"></div>
       </motion.div>
 
-      {/* Obstacle (ROSSO, come l'originale) */}
+      {/* Classic Red Obstacle */}
       <div
         className="absolute bottom-10 border border-red-400 bg-red-500/80 shadow-[0_0_10px_red]"
         style={{ 
           left: obstData.x,
           width: obstData.w,
           height: obstData.h,
-          // Glitch leggero ma mantenendo la forma a blocco
           clipPath: 'polygon(0 0, 100% 5%, 95% 100%, 5% 95%)'
         }} 
       />
