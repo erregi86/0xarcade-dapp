@@ -8,10 +8,11 @@ import { useConnectModal } from '@rainbow-me/rainbowkit';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
 import TacticalAlert from './components/TacticalAlert';
-// 🟢 IMPORT NUOVE FUNZIONI DB
+import { NotificationsModal } from './components/NotificationsModal';
+
+// DB & Contracts
 import { getLeaderboard, getPendingChallenges, respondToChallenge, createChallengeDB } from './lib/db'; 
 import { ARCADE_CONTRACT_ADDRESS, ARCADE_ABI } from './lib/contracts';
-import { NotificationsModal } from './components/NotificationsModal'; 
 
 import { 
   X, Share2, Copy, Trophy, Medal, Award, Target, MessageCircle, Send,
@@ -83,7 +84,7 @@ const ShareModal = ({ data, onClose }: { data: { score: string, rank: number } |
   );
 };
 
-// --- BETTING MODAL ---
+// --- BETTING MODAL (Creazione Sfida) ---
 const BettingModal = ({ opponent, onClose, myAddress }: { opponent: Player | null, onClose: () => void, myAddress?: string }) => {
   const [selectedGame, setSelectedGame] = useState(GAMES[0].id);
   const [wager, setWager] = useState("10"); 
@@ -95,7 +96,7 @@ const BettingModal = ({ opponent, onClose, myAddress }: { opponent: Player | nul
   const handleChallenge = async () => {
     if (!wager || isPending || !myAddress) return;
     
-    // 1. Scrivi su Blockchain (Lasciamo questo come "Intent" per ora)
+    // 1. Scrivi su Blockchain (Blocca fondi)
     writeContract({
       address: ARCADE_CONTRACT_ADDRESS,
       abi: ARCADE_ABI,
@@ -104,9 +105,7 @@ const BettingModal = ({ opponent, onClose, myAddress }: { opponent: Player | nul
       value: parseEther(wager), 
     });
 
-    // 2. 🟢 Salva su DB Supabase (Così l'altro utente la vede)
-    // Nota: In produzione questo dovrebbe farlo il backend ascoltando gli eventi blockchain
-    // Ma per Web2.5 veloce, lo facciamo qui.
+    // 2. Salva su DB Supabase (Notifica utente)
     const gameName = GAMES.find(g => g.id === selectedGame)?.name || 'UNKNOWN';
     await createChallengeDB(myAddress, opponent.address, gameName, wager);
   };
@@ -282,7 +281,6 @@ export default function Home() {
       const checkInbox = async () => {
         const { data, error } = await getPendingChallenges(address);
         if (data && data.length > 0) {
-          // Mappa i dati DB nel formato Notification
           const realNotifs: ChallengeNotification[] = data.map((c: any) => ({
             id: c.id,
             challenger: `${c.challenger_address.substring(0,6)}...`,
@@ -293,8 +291,6 @@ export default function Home() {
           
           setNotifications(realNotifs);
           
-          // Se ci sono nuove notifiche e non l'abbiamo ancora visto, alert
-          // (Logica semplificata: mostra alert se c'è almeno 1 notifica e inbox chiuso)
           if (!isNotificationsOpen) {
             setAlertState({
               isOpen: true,
@@ -308,28 +304,25 @@ export default function Home() {
         }
       };
 
-      // Controllo immediato e poi intervallo
       checkInbox();
-      const interval = setInterval(checkInbox, 10000); // 10 secondi
+      const interval = setInterval(checkInbox, 10000); 
       return () => clearInterval(interval);
     }
   }, [isConnected, address, isNotificationsOpen]);
 
   // 🟢 LOGICA ACCEPT (INIZIA IL GIOCO)
   const handleAcceptChallenge = async (id: string) => {
-    // 1. Trova la sfida nella lista locale
     const challenge = notifications.find(n => n.id === id);
     if (!challenge) return;
 
-    // 2. Aggiorna DB (Accetta)
+    // 1. Accetta su DB
     await respondToChallenge(id, 'accepted');
 
-    // 3. Rimuovi dalla lista locale
+    // 2. UI Update
     setNotifications(prev => prev.filter(n => n.id !== id));
-    setIsNotificationsOpen(false); // Chiudi modal
+    setIsNotificationsOpen(false);
 
-    // 4. Trova ID del gioco
-    // Cerchiamo nell'array GAMES quale gioco ha il nome della sfida
+    // 3. Start Game
     const gameObj = GAMES.find(g => g.name === challenge.game);
     
     if (gameObj) {
@@ -340,10 +333,8 @@ export default function Home() {
         type: 'success'
       });
       
-      // 5. REDIRECT AL GIOCO
-      // Aspettiamo un attimo per far leggere l'alert
       setTimeout(() => {
-        setAlertState(prev => ({ ...prev, isOpen: false })); // Chiudi alert
+        setAlertState(prev => ({ ...prev, isOpen: false }));
         setSelectedGameId(gameObj.id);
         setCurrentPage('game');
       }, 1500);
@@ -391,6 +382,7 @@ export default function Home() {
 
   return (
     <div className="flex h-screen w-screen bg-[#050505] text-[#00ff41] font-mono overflow-hidden tactical-grid scanlines">
+
       <TacticalAlert 
         isOpen={alertState.isOpen}
         title={alertState.title}

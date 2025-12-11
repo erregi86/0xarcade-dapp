@@ -1,8 +1,7 @@
 // lib/contracts.ts
 
-// Indirizzo del contratto Arcade su Chiliz Spicy Testnet (Esempio)
-// Quando farai il deploy vero, sostituirai questa stringa.
-export const ARCADE_CONTRACT_ADDRESS = "0x0000000000000000000000000000000000000000"; 
+// ⚠️ IMPORTANTE: Sostituisci questa stringa con l'address copiato da Remix dopo il deploy!
+export const ARCADE_CONTRACT_ADDRESS = "0x3de20218FBDE6aDe713cC7F1287c836C86754Ec4"; 
 
 export const ARCADE_ABI = [
   {
@@ -15,14 +14,35 @@ export const ARCADE_ABI = [
     "stateMutability": "payable",
     "type": "function"
   },
-  // 🟢 AGGIUNTO: Funzione per reclamare la vittoria
   {
     "inputs": [
-      { "internalType": "string", "name": "_challengeId", "type": "string" }
+      { "internalType": "uint256", "name": "_challengeId", "type": "uint256" }
     ],
     "name": "claimReward",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
+  },
+  // Eventi (Utili per il futuro, li lasciamo per completezza)
+  {
+    "anonymous": false,
+    "inputs": [
+      { "indexed": true, "internalType": "uint256", "name": "challengeId", "type": "uint256" },
+      { "indexed": true, "internalType": "address", "name": "challenger", "type": "address" },
+      { "indexed": true, "internalType": "address", "name": "opponent", "type": "address" },
+      { "indexed": false, "internalType": "uint256", "name": "wager", "type": "uint256" }
+    ],
+    "name": "ChallengeCreated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      { "indexed": true, "internalType": "uint256", "name": "challengeId", "type": "uint256" },
+      { "indexed": true, "internalType": "address", "name": "winner", "type": "address" },
+      { "indexed": false, "internalType": "uint256", "name": "amount", "type": "uint256" }
+    ],
+    "name": "RewardClaimed",
+    "type": "event"
   }
 ] as const;

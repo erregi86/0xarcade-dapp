@@ -122,7 +122,7 @@ export function Sidebar({ activePage, onNavigate, isOpen = false, onClose }: Sid
             </div>
           )}
           <div className="text-[8px] text-[#00ff41] mt-3 opacity-50 text-center font-mono">
-            SYSTEM ONLINE :: 88882
+            SYSTEM ONLINE :: 88882 <span> Made with &lt;3 by Erregi</span>
           </div>
         </div>
       </div>

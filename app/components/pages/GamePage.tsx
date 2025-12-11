@@ -2,15 +2,17 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Coins, Play, ArrowLeft, Swords, Cpu, Save, LogOut } from 'lucide-react';
-import { useAccount, useWriteContract } from 'wagmi'; // 🟢 WAGMI
+import { Coins, ArrowLeft, Swords, Cpu } from 'lucide-react';
+import { useAccount, useWriteContract } from 'wagmi'; 
 import NetRunner from '../games/NetRunner';
 import CyberFlap from '../games/CyberFlap';
 import DataBreaker from '../games/DataBreaker';
+import ZeroXBreach from '../games/ZeroXBreach';
 import { BettingControls } from '../BettingControls';
 import { saveGameScore } from '../../lib/db';
 import TacticalAlert from '../TacticalAlert';
-import { ARCADE_CONTRACT_ADDRESS, ARCADE_ABI } from '../../lib/contracts'; // 🟢 CONTRACTS
+import { ARCADE_CONTRACT_ADDRESS, ARCADE_ABI } from '../../lib/contracts';
+import { IntroModal } from '../IntroModal'; // 🟢 1. IMPORTA MODALE QUI
 
 interface GamePageProps {
   gameId: number;
@@ -24,7 +26,9 @@ export function GamePage({ gameId, onBack, onConnectRequest }: GamePageProps) {
   const [mode, setMode] = useState<GameMode>('menu');
   const [playType, setPlayType] = useState<'free' | 'paid'>('free');
   
-  // 🟢 STATO PER CLAIM REWARD
+  // 🟢 2. STATO VISIBILITÀ INTRO
+  const [showIntro, setShowIntro] = useState(false);
+
   const { writeContract, isPending: isClaiming } = useWriteContract();
 
   const [alertState, setAlertState] = useState<{
@@ -48,6 +52,7 @@ export function GamePage({ gameId, onBack, onConnectRequest }: GamePageProps) {
       case 1: return 'NET RUNNER';
       case 2: return 'CYBER FLAP';
       case 3: return 'DATA BREAKER';
+      case 4: return '0xBREACH';
       default: return 'UNKNOWN MODULE';
     }
   };
@@ -61,29 +66,38 @@ export function GamePage({ gameId, onBack, onConnectRequest }: GamePageProps) {
     setMode('playing');
   };
 
-  // 🟢 FUNZIONE CLAIM (Chiama Smart Contract)
+  // 🟢 3. GESTORE CLICK "PVP WAGER"
+  const handleBetModeClick = () => {
+    // Controlla se l'utente ha già accettato i termini
+    const hasAccepted = localStorage.getItem('0xarcade_terms_accepted');
+    
+    if (hasAccepted) {
+      // Se già accettato, vai diretto
+      setMode('bet');
+    } else {
+      // Altrimenti apri il modale
+      setShowIntro(true);
+    }
+  };
+
   const handleClaimReward = () => {
+    const mockChallengeId = BigInt(1); 
     writeContract({
       address: ARCADE_CONTRACT_ADDRESS,
       abi: ARCADE_ABI,
       functionName: 'claimReward',
-      args: ["challenge-demo-id"], // In prod passerai l'ID reale della sfida
+      args: [mockChallengeId], 
     });
-    // Chiudi alert dopo il click
     setAlertState(prev => ({ ...prev, isOpen: false }));
   };
 
-  // 🟢 LOGICA GAME OVER (Fusionata)
   const handleGameOver = async (score: number) => {
-    // 1. Calcolo XP
     const xpEarned = 10 + Math.floor(score / 10);
     
-    // 2. Salvataggio DB
     if (isConnected && address) {
       saveGameScore(address, gameId, score).catch(console.error);
     }
 
-    // 3. Logica Vittoria/Sconfitta
     let outcomeType: 'error' | 'warning' | 'success' = 'success';
     let outcomeTitle = 'MISSION ACCOMPLISHED';
     let outcomeMsg = 'EXCELLENT PERFORMANCE.';
@@ -101,18 +115,20 @@ export function GamePage({ gameId, onBack, onConnectRequest }: GamePageProps) {
         outcomeType = 'success';
         outcomeTitle = 'ELITE PERFORMANCE';
         outcomeMsg = 'TARGET DESTROYED. REWARD AVAILABLE.';
-        showClaimButton = true; // Se hai fatto > 200 punti, puoi fare claim (simulazione vittoria)
+        showClaimButton = true;
     }
 
-    // 4. Mostra Alert con opzione Claim
     setAlertState({
       isOpen: true,
       title: outcomeTitle,
       message: `REPORT:\n> FINAL SCORE: ${score}\n> XP GAINED: +${xpEarned}\n> STATUS: ${outcomeMsg}`,
       type: outcomeType,
-      // Se è Paid Mode e hai vinto, mostra tasto CLAIM, altrimenti RETURN
-      actionLabel: (playType === 'paid' && showClaimButton) ? (isClaiming ? 'PROCESSING...' : 'CLAIM REWARD ($CHZ)') : 'RETURN TO BASE',
-      onAction: (playType === 'paid' && showClaimButton) ? handleClaimReward : () => setMode('menu')
+      actionLabel: (playType === 'paid' && showClaimButton) 
+        ? (isClaiming ? 'PROCESSING...' : 'CLAIM REWARD ($CHZ)') 
+        : 'RETURN TO BASE',
+      onAction: (playType === 'paid' && showClaimButton) 
+        ? handleClaimReward 
+        : () => setMode('menu')
     });
   };
 
@@ -123,6 +139,13 @@ export function GamePage({ gameId, onBack, onConnectRequest }: GamePageProps) {
       exit={{ opacity: 0, scale: 0.95 }}
       className="p-4 md:p-8 text-[#00ff41] font-mono h-full flex flex-col relative"
     >
+      {/* 🟢 4. RENDERIZZA MODALE INTRO */}
+      <IntroModal 
+        isOpen={showIntro} 
+        onClose={() => setShowIntro(false)} 
+        onComplete={() => setMode('bet')} // Quando finisce, vai al betting
+      />
+
       <TacticalAlert 
         isOpen={alertState.isOpen}
         title={alertState.title}
@@ -131,7 +154,6 @@ export function GamePage({ gameId, onBack, onConnectRequest }: GamePageProps) {
         actionLabel={alertState.actionLabel}
         onAction={alertState.onAction}
         onClose={() => {
-            // Se chiudi senza cliccare l'azione, torna al menu
             setAlertState(prev => ({ ...prev, isOpen: false }));
             if (!isClaiming) setMode('menu');
         }}
@@ -177,8 +199,9 @@ export function GamePage({ gameId, onBack, onConnectRequest }: GamePageProps) {
                 </p>
               </div>
 
+              {/* 🟢 5. AGGIORNATO CLICK HANDLER */}
               <div 
-                onClick={() => setMode('bet')}
+                onClick={handleBetModeClick} 
                 className="group border border-[#00ff41] p-8 h-64 flex flex-col items-center justify-center gap-4 cursor-pointer hover:bg-[#00ff41]/10 transition-colors relative overflow-hidden"
               >
                 <Swords size={48} className="group-hover:scale-110 transition-transform duration-300" />
@@ -203,7 +226,6 @@ export function GamePage({ gameId, onBack, onConnectRequest }: GamePageProps) {
                   <Coins /> WAGER PROTOCOL
                 </h3>
                 
-                {/* 🟢 Assicurati che BettingControls esista e funzioni */}
                 <BettingControls onRunGame={() => handleStartGame('paid')} />
                 
                 <button onClick={() => setMode('menu')} className="mt-6 w-full text-center text-xs hover:underline text-[#00ff41]/60">
@@ -220,10 +242,10 @@ export function GamePage({ gameId, onBack, onConnectRequest }: GamePageProps) {
               animate={{ opacity: 1 }}
               className="absolute inset-0 bg-black flex items-center justify-center"
             >
-               {/* 🟢 CARICAMENTO GIOCHI REALI */}
                {gameId === 1 && <NetRunner onGameOver={handleGameOver} />}
                {gameId === 2 && <CyberFlap onGameOver={handleGameOver} />}
                {gameId === 3 && <DataBreaker onGameOver={handleGameOver} />}
+               {gameId === 4 && <ZeroXBreach onGameOver={handleGameOver} />}
             </motion.div>
           )}
 
