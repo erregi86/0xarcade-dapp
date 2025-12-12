@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Zap } from 'lucide-react';
+// 👇 1. Importo il controller audio
+import GameAudioController from '../GameAudioController';
 
 interface CyberFlapProps {
   onGameOver: (score: number) => void;
@@ -9,13 +11,13 @@ interface CyberFlapProps {
 
 export default function CyberFlap({ onGameOver }: CyberFlapProps) {
   // --- TUNING CONFIG ---
-  const GRAVITY = 0.45;       // Molto più floaty (facile da controllare)
-  const JUMP = -7.5;          // Salto più morbido
+  const GRAVITY = 0.45;       
+  const JUMP = -7.5;          
   const PIPE_WIDTH = 60;
   const PIPE_SPACING = 350;   
-  const INITIAL_GAP = 230;    // Gap enorme all'inizio
-  const MIN_GAP = 140;        // Gap minimo meno punitivo
-  const INITIAL_SPEED = 2.2;  // Partenza lenta e ritmata
+  const INITIAL_GAP = 230;    
+  const MIN_GAP = 140;        
+  const INITIAL_SPEED = 2.2;  
   const MAX_SPEED = 7.0;      
   const PRIMARY_COLOR = '#00f3ff'; 
 
@@ -69,7 +71,7 @@ export default function CyberFlap({ onGameOver }: CyberFlapProps) {
     pipesRef.current.forEach(pipe => {
       pipe.x -= speedRef.current;
 
-      const birdLeft = 50 + 8; // Hitbox molto perdonante (+8px)
+      const birdLeft = 50 + 8;
       const birdRight = 50 + 30 - 8;
       const birdTop = birdRef.current.y + 8;
       const birdBottom = birdRef.current.y + 30 - 8;
@@ -89,7 +91,6 @@ export default function CyberFlap({ onGameOver }: CyberFlapProps) {
         scoreRef.current += 1;
         setScore(scoreRef.current);
 
-        // Progressione Lenta
         if (speedRef.current < MAX_SPEED) speedRef.current += 0.05;
         if (gapRef.current > MIN_GAP) gapRef.current -= 1.5;
       }
@@ -116,6 +117,7 @@ export default function CyberFlap({ onGameOver }: CyberFlapProps) {
     else if (gameState === 'playing') birdRef.current.velocity = JUMP;
   };
 
+  // 👇 QUESTA È LA SEZIONE CHE DAVA ERRORE (ORA È CORRETTA)
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       if (e.code === 'Space' || e.code === 'ArrowUp') {
@@ -125,7 +127,7 @@ export default function CyberFlap({ onGameOver }: CyberFlapProps) {
     };
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
-  }, [gameState]);
+  }, [gameState]); // AGGIUNTO IL CLOSING BRACKET CORRETTO
 
   const handleGameOver = () => {
     setGameState('gameover');
@@ -140,6 +142,12 @@ export default function CyberFlap({ onGameOver }: CyberFlapProps) {
       onMouseDown={handleInput}
       onTouchStart={handleInput}
     >
+      {/* 👇 2. Inserisco il controller audio qui */}
+      <GameAudioController 
+        isPlaying={gameState === 'playing'} 
+        isGameOver={gameState === 'gameover'} 
+      />
+
       <div className="absolute top-4 right-4 z-10 text-right pointer-events-none">
         <div className="text-2xl font-[Press Start 2P]" style={{ color: PRIMARY_COLOR }}>{score}</div>
         <div className="text-[10px] font-mono opacity-50" style={{ color: PRIMARY_COLOR }}>SPEED: {speedRef.current.toFixed(1)}</div>

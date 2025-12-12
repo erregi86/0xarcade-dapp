@@ -2,8 +2,7 @@
 
 import * as React from 'react';
 import '@rainbow-me/rainbowkit/styles.css';
-import { darkTheme } from '@rainbow-me/rainbowkit';
-import { getDefaultConfig, RainbowKitProvider } from '@rainbow-me/rainbowkit';
+import { darkTheme, getDefaultConfig, RainbowKitProvider } from '@rainbow-me/rainbowkit';
 import { WagmiProvider } from 'wagmi';
 import { defineChain } from 'viem';
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
@@ -36,11 +35,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
       <QueryClientProvider client={queryClient}>
        <RainbowKitProvider 
           theme={darkTheme({
-            accentColor: '#00ff41',        // Verde Neon
-            accentColorForeground: 'black', // Testo nero su verde
-            borderRadius: 'none',          // 🟢 FONDAMENTALE: Zero curve
+            accentColor: '#00ff41',        
+            accentColorForeground: 'black', 
+            borderRadius: 'none',          
             fontStack: 'system',
-            overlayBlur: 'small',          // Blur sullo sfondo
+            overlayBlur: 'small',          
           })}
           modalSize="compact"
         >

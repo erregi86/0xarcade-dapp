@@ -42,8 +42,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      {/* 🟢 AGGIUNTO: tactical-grid e scanlines qui, così sono GLOBALI */}
       <body className={`${vt323.variable} ${techMono.variable} antialiased bg-black text-[#00ff41] overflow-x-hidden selection:bg-[#00ff41] selection:text-black tactical-grid scanlines`}>
+        {/* L'audio sarà dentro Providers, quindi qui non tocchiamo nulla */}
         <Providers>{children}</Providers>
       </body>
     </html>

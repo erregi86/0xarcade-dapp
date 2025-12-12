@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+// 👇 1. Importo il controller audio
+import GameAudioController from '../GameAudioController';
 
 interface DataBreakerProps {
   onGameOver: (score: number) => void;
@@ -23,7 +25,6 @@ export default function DataBreaker({ onGameOver }: DataBreakerProps) {
   const levelRef = useRef(1);
   
   const paddle = useRef({ x: WIDTH / 2 - PADDLE_WIDTH / 2 });
-  // Start più lento (3.5 invece di 5.0)
   const ball = useRef({ x: WIDTH / 2, y: HEIGHT - 50, dx: 0, dy: 0, speed: 3.5 });
   const bricks = useRef<{ x: number, y: number, active: boolean }[]>([]);
   
@@ -63,7 +64,6 @@ export default function DataBreaker({ onGameOver }: DataBreakerProps) {
       y: HEIGHT - 50, 
       dx: 3 * (Math.random() > 0.5 ? 1 : -1), 
       dy: -4, 
-      // Aumento velocità per livello leggermente più alto (+0.8), ma base bassa (3.5)
       speed: 3.5 + (levelRef.current * 0.8) 
     };
     paddle.current = { x: WIDTH / 2 - PADDLE_WIDTH / 2 };
@@ -126,7 +126,6 @@ export default function DataBreaker({ onGameOver }: DataBreakerProps) {
       x >= paddle.current.x &&
       x <= paddle.current.x + PADDLE_WIDTH
     ) {
-      // Accelerazione molto più dolce (2% invece del 3-5%)
       ball.current.speed = Math.min(ball.current.speed * 1.02, 10); 
       
       const hitPoint = x - (paddle.current.x + PADDLE_WIDTH / 2);
@@ -253,6 +252,12 @@ export default function DataBreaker({ onGameOver }: DataBreakerProps) {
       onClick={() => { if (status === 'start') initGame(); }}
       tabIndex={0}
     >
+      {/* 👇 2. Inserisco il controller audio qui. Mantengo la musica anche durante la transizione tra livelli. */}
+      <GameAudioController 
+        isPlaying={status === 'playing' || status === 'transition'} 
+        isGameOver={status === 'gameover'} 
+      />
+
       <div className="relative shadow-[0_0_30px_rgba(214,0,255,0.15)]">
         <canvas 
           ref={canvasRef} 

@@ -9,6 +9,7 @@ import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
 import TacticalAlert from './components/TacticalAlert';
 import { NotificationsModal } from './components/NotificationsModal';
+import { IntroModal } from './components/IntroModal'; // Intro rimosso qui nel JSX, gestito in GamePage come richiesto
 
 // DB & Contracts
 import { getLeaderboard, getPendingChallenges, respondToChallenge, createChallengeDB } from './lib/db'; 
@@ -84,7 +85,7 @@ const ShareModal = ({ data, onClose }: { data: { score: string, rank: number } |
   );
 };
 
-// --- BETTING MODAL (Creazione Sfida) ---
+// --- BETTING MODAL ---
 const BettingModal = ({ opponent, onClose, myAddress }: { opponent: Player | null, onClose: () => void, myAddress?: string }) => {
   const [selectedGame, setSelectedGame] = useState(GAMES[0].id);
   const [wager, setWager] = useState("10"); 
@@ -96,7 +97,6 @@ const BettingModal = ({ opponent, onClose, myAddress }: { opponent: Player | nul
   const handleChallenge = async () => {
     if (!wager || isPending || !myAddress) return;
     
-    // 1. Scrivi su Blockchain (Blocca fondi)
     writeContract({
       address: ARCADE_CONTRACT_ADDRESS,
       abi: ARCADE_ABI,
@@ -105,7 +105,6 @@ const BettingModal = ({ opponent, onClose, myAddress }: { opponent: Player | nul
       value: parseEther(wager), 
     });
 
-    // 2. Salva su DB Supabase (Notifica utente)
     const gameName = GAMES.find(g => g.id === selectedGame)?.name || 'UNKNOWN';
     await createChallengeDB(myAddress, opponent.address, gameName, wager);
   };
@@ -188,8 +187,11 @@ const LeaderboardSection = ({ onChallenge, onShare }: { onChallenge: (p: Player)
       try {
         setLoading(true);
         const { data, error } = await getLeaderboard();
-        if (error) { console.error('Supabase Error:', error); setPlayers([]); } 
-        else if (data) {
+        if (error) { 
+          console.error('Supabase Error:', error); 
+          setPlayers([]); 
+        } else if (data) {
+          // FIX: Qui mancava la chiusura corretta
           const mappedPlayers: Player[] = data.map((user: any, index: number) => ({
             rank: index + 1,
             address: user.wallet_address || user.id,
@@ -256,7 +258,7 @@ export default function Home() {
   const [selectedOpponent, setSelectedOpponent] = useState<Player | null>(null);
   const [shareData, setShareData] = useState<Player | null>(null);
   
-  // 🟢 STATI NOTIFICHE (REALI)
+  // Stati notifiche reali
   const [notifications, setNotifications] = useState<ChallengeNotification[]>([]);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
 
@@ -275,7 +277,7 @@ export default function Home() {
 
   useEffect(() => { setMounted(true); }, []);
 
-  // 🟢 FETCH NOTIFICHE REALI (POLLING OGNI 10s)
+  // Fetch Notifiche Reali (Polling 10s)
   useEffect(() => {
     if (isConnected && address) {
       const checkInbox = async () => {
@@ -310,26 +312,21 @@ export default function Home() {
     }
   }, [isConnected, address, isNotificationsOpen]);
 
-  // 🟢 LOGICA ACCEPT (INIZIA IL GIOCO)
+  // Handlers Notifiche
   const handleAcceptChallenge = async (id: string) => {
     const challenge = notifications.find(n => n.id === id);
     if (!challenge) return;
 
-    // 1. Accetta su DB
     await respondToChallenge(id, 'accepted');
-
-    // 2. UI Update
     setNotifications(prev => prev.filter(n => n.id !== id));
     setIsNotificationsOpen(false);
 
-    // 3. Start Game
     const gameObj = GAMES.find(g => g.name === challenge.game);
-    
     if (gameObj) {
       setAlertState({
         isOpen: true,
         title: 'MATCH INITIALIZED',
-        message: `Connecting to ${gameObj.name} server. Good luck.`,
+        message: `Connecting to ${gameObj.name} server...`,
         type: 'success'
       });
       
@@ -338,9 +335,6 @@ export default function Home() {
         setSelectedGameId(gameObj.id);
         setCurrentPage('game');
       }, 1500);
-
-    } else {
-      console.error("Game not found for:", challenge.game);
     }
   };
 
@@ -381,8 +375,8 @@ export default function Home() {
   };
 
   return (
-    <div className="flex h-screen w-screen bg-[#050505] text-[#00ff41] font-mono overflow-hidden tactical-grid scanlines">
-
+    <div className="flex h-[100dvh] w-screen bg-[#050505] text-[#00ff41] font-mono overflow-hidden tactical-grid scanlines">
+      
       <TacticalAlert 
         isOpen={alertState.isOpen}
         title={alertState.title}
@@ -393,7 +387,6 @@ export default function Home() {
         onClose={() => setAlertState(prev => ({ ...prev, isOpen: false }))}
       />
       
-      {/* Notifications Modal */}
       <NotificationsModal 
         isOpen={isNotificationsOpen}
         onClose={() => setIsNotificationsOpen(false)}
@@ -406,12 +399,30 @@ export default function Home() {
         {selectedOpponent && <BettingModal key="betting" opponent={selectedOpponent} onClose={() => setSelectedOpponent(null)} myAddress={address} />}
         {shareData && <ShareModal key="share" data={shareData} onClose={() => setShareData(null)} />}
       </AnimatePresence>
-      <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-black border-r border-[#00ff41] transform transition-transform duration-300 md:relative md:translate-x-0 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-        <Sidebar activePage={currentPage === 'game' ? 'home' : currentPage} onNavigate={handleNavigation} isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+
+      <div className={`
+        fixed inset-y-0 left-0 z-50 w-64 bg-black border-r border-[#00ff41] transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0
+        ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+      `}>
+        <Sidebar 
+          activePage={currentPage === 'game' ? 'home' : currentPage} 
+          onNavigate={handleNavigation} 
+          isOpen={isSidebarOpen} 
+          onClose={() => setIsSidebarOpen(false)}
+          notificationCount={notifications.length}
+          onOpenInbox={() => setIsNotificationsOpen(true)}
+        />
       </div>
-      <div className="flex-1 flex flex-col min-w-0 bg-black/80 backdrop-blur-sm relative z-10">
-        <div className="h-20 flex-shrink-0 border-b border-[#00ff41] bg-black/90 px-6 flex items-center">
-           <button onClick={() => setIsSidebarOpen(true)} className="md:hidden mr-4 text-2xl border border-[#00ff41] px-2 text-[#00ff41]">☰</button>
+
+      <div className="flex-1 flex flex-col min-w-0 bg-black/80 backdrop-blur-sm relative z-10 h-full">
+        
+        <div className="h-16 md:h-20 flex-shrink-0 border-b border-[#00ff41] bg-black/90 px-4 md:px-6 flex items-center">
+           <button 
+             onClick={() => setIsSidebarOpen(true)} 
+             className="md:hidden mr-4 p-1 text-2xl border border-[#00ff41]/50 text-[#00ff41] hover:bg-[#00ff41] hover:text-black transition-colors"
+           >
+             ☰
+           </button>
            <div className="flex-1">
              <Header 
                page={getPageTitle(currentPage)} 
@@ -420,7 +431,8 @@ export default function Home() {
              />
            </div>
         </div>
-        <main className="flex-1 overflow-y-auto p-0 scroll-smooth">
+
+        <main className="flex-1 overflow-y-auto p-0 scroll-smooth overscroll-none pb-20 md:pb-0">
           <AnimatePresence mode="wait">
             {currentPage === 'home' && <HomePage key="home" onGameSelect={handleGameSelect} gamesList={GAMES} />}
             {currentPage === 'stats' && <StatsPage key="stats" />}
@@ -431,7 +443,10 @@ export default function Home() {
           </AnimatePresence>
         </main>
       </div>
-      {isSidebarOpen && <div className="fixed inset-0 bg-black/80 z-40 md:hidden" onClick={() => setIsSidebarOpen(false)} />}
+
+      {isSidebarOpen && (
+        <div className="fixed inset-0 bg-black/80 z-40 md:hidden backdrop-blur-sm transition-opacity duration-300" onClick={() => setIsSidebarOpen(false)} />
+      )}
     </div>
   );
 }

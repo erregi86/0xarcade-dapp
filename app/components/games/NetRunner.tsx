@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
+// 👇 1. Importo il controller audio
+import GameAudioController from '../GameAudioController';
 
 interface NetRunnerProps {
   onGameOver: (score: number) => void;
@@ -9,12 +11,12 @@ interface NetRunnerProps {
 
 export default function NetRunner({ onGameOver }: NetRunnerProps) {
   // --- TUNING CONFIG (EASY START) ---
-  const INITIAL_SPEED = 6.5;   // Molto più gestibile all'inizio
-  const MAX_SPEED = 18.0;      // Cap ragionevole
-  const SPEED_INCREMENT = 0.1; // Aumento più dolce
+  const INITIAL_SPEED = 6.5;   
+  const MAX_SPEED = 18.0;      
+  const SPEED_INCREMENT = 0.1; 
   
-  const GRAVITY = 0.65;        // Salto meno "pesante", più floaty
-  const JUMP_STRENGTH = -11;   // Salto bilanciato
+  const GRAVITY = 0.65;        
+  const JUMP_STRENGTH = -11;   
   const FLOOR_Y = 0;
 
   const [gameState, setGameState] = useState<'start' | 'playing' | 'gameover'>('start');
@@ -33,9 +35,8 @@ export default function NetRunner({ onGameOver }: NetRunnerProps) {
 
   const resetObstacle = () => {
     const newWidth = Math.floor(Math.random() * 20) + 25; 
-    const newHeight = Math.floor(Math.random() * 40) + 30; // Meno alti all'inizio
+    const newHeight = Math.floor(Math.random() * 40) + 30; 
     
-    // Distanza spawn più generosa
     const minDistance = 450 + (speedRef.current * 10); 
     const randomBuffer = Math.random() * 300;
 
@@ -73,8 +74,8 @@ export default function NetRunner({ onGameOver }: NetRunnerProps) {
       }
     }
 
-    // 3. Collisione (Hitbox perdonante)
-    const dinoX = 50 + 8; // Più margine
+    // 3. Collisione
+    const dinoX = 50 + 8; 
     const dinoW = 40 - 16; 
     
     if (
@@ -117,9 +118,7 @@ export default function NetRunner({ onGameOver }: NetRunnerProps) {
     }
   }, [gameState]);
 
-  // Gestione Input Unificata (Mouse/Touch)
   const handleInput = (e: any) => {
-    // Non prevenire default su touch per evitare blocchi
     if (gameState === 'start') setGameState('playing');
     else jump();
   };
@@ -148,6 +147,12 @@ export default function NetRunner({ onGameOver }: NetRunnerProps) {
       onMouseDown={handleInput}
       onTouchStart={handleInput}
     >
+      {/* 👇 2. Inserisco il controller audio qui */}
+      <GameAudioController 
+        isPlaying={gameState === 'playing'} 
+        isGameOver={gameState === 'gameover'} 
+      />
+
       <div className="absolute top-4 right-4 text-right pointer-events-none z-10">
         <div className="text-2xl font-[Press Start 2P] text-[#00ff41]">{score}</div>
         <div className="text-[10px] font-mono text-[#00ff41]/60">SPEED: {(speedRef.current * 10).toFixed(0)}</div>
@@ -162,10 +167,8 @@ export default function NetRunner({ onGameOver }: NetRunnerProps) {
         </div>
       )}
 
-      {/* Classic Green Floor */}
       <div className="absolute bottom-10 left-0 right-0 h-1 bg-[#00ff41]/50"></div>
 
-      {/* Classic Dino */}
       <motion.div
         className="absolute bottom-10 left-[50px] w-10 h-10 bg-[#00ff41]"
         style={{ y: dinoY }}
@@ -173,7 +176,6 @@ export default function NetRunner({ onGameOver }: NetRunnerProps) {
         <div className="absolute top-2 right-2 w-2 h-2 bg-black"></div>
       </motion.div>
 
-      {/* Classic Red Obstacle */}
       <div
         className="absolute bottom-10 border border-red-400 bg-red-500/80 shadow-[0_0_10px_red]"
         style={{ 

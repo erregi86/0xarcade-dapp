@@ -172,3 +172,13 @@
 [data-rk] [style*="border-top"] {
     border-top: none !important;
 }
+
+@media (max-width: 768px) {
+  .main-content::after {
+    content: "";
+    display: block;
+    height: 20vh; /* Spazio extra */
+    width: 100%;
+    background: transparent;
+  }
+}
